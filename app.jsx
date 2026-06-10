@@ -136,7 +136,6 @@ const SORT_OPTS = [
 ];
 
 function App() {
-  const [ready,        setReady]        = useState(false);
   const [places,       setPlaces]       = useState([]);
   const [loading,      setLoading]      = useState(false);
   const [activeChip,   setActiveChip]   = useState('All');
@@ -149,24 +148,16 @@ function App() {
   const [detailTravel, setDetailTravel] = useState(null);
   const [mobileView,   setMobileView]   = useState('list');
 
-  const serviceRef = useRef(null);
+  const serviceRef  = useRef(null);
   const mapReadyRef = useRef(false);
 
-  // ── Wait for Google Maps API callback ─────────────────────────────────
+  // ── Init map + first search ────────────────────────────────────────────
   useEffect(() => {
-    window.initMap = () => setReady(true);
-    // If already loaded (cached)
-    if (window.google?.maps) setReady(true);
-  }, []);
-
-  // ── Init map + first search once API is ready ──────────────────────────
-  useEffect(() => {
-    if (!ready) return;
     initGoogleMap();
     serviceRef.current = new google.maps.places.PlacesService(gMap);
     mapReadyRef.current = true;
     doSearch('restaurant');
-  }, [ready]);
+  }, []);
 
   // ── Places search ──────────────────────────────────────────────────────
   const doSearch = useCallback((keyword) => {
