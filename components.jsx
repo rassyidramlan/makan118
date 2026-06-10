@@ -1,99 +1,155 @@
-// ── Utility helpers ────────────────────────────────────────────────────────
+// ── Utilities ──────────────────────────────────────────────────────────────
 
 window.halalScore = function(place) {
-  const hay = [
-    (place.name || ''),
-    (place.vicinity || ''),
-    ...(place.types || [])
-  ].join(' ').toLowerCase();
+  // Safety: guard against missing fields
+  const name     = (place.name     || '').toLowerCase();
+  const vicinity = (place.vicinity || '').toLowerCase();
+  const types    = Array.isArray(place.types) ? place.types.join(' ').toLowerCase() : '';
+  const hay      = name + ' ' + vicinity + ' ' + types;
 
   const kw = window.HALAL_KEYWORDS;
-  for (const word of kw.unlikely) if (hay.includes(word)) return 'unsure';
-  for (const word of kw.likely)   if (hay.includes(word)) return 'likely';
-  for (const word of kw.check)    if (hay.includes(word)) return 'check';
-  return 'likely'; // default optimistic for KL context
+  for (const w of kw.unlikely)  if (hay.includes(w)) return 'unsure';
+  for (const w of kw.cert)      if (hay.includes(w)) return 'cert';
+  for (const w of kw.friendly)  if (hay.includes(w)) return 'friendly';
+  return 'cert'; // optimistic default for KL context
 };
 
-window.halalLabel = { likely:'Halal ✓', check:'Check', unsure:'Not Halal' };
-
 window.isMall = function(place) {
-  const hay = [place.name || '', place.vicinity || ''].join(' ').toLowerCase();
+  const hay = ((place.name || '') + ' ' + (place.vicinity || '')).toLowerCase();
   return window.KL_MALLS.some(m => hay.includes(m));
 };
 
-window.photoUrl = function(place, maxW = 200) {
-  if (place.photos && place.photos.length > 0) {
-    return place.photos[0].getUrl({ maxWidth: maxW });
-  }
-  return null;
+window.photoUrl = function(place, maxW) {
+  maxW = maxW || 200;
+  try {
+    return (place.photos && place.photos.length > 0)
+      ? place.photos[0].getUrl({ maxWidth: maxW })
+      : null;
+  } catch(e) { return null; }
 };
 
 window.typeEmoji = function(types) {
-  if (!types) return '🍽️';
-  if (types.includes('cafe'))       return '☕';
-  if (types.includes('bakery'))     return '🥐';
-  if (types.includes('bar'))        return '🍸';
-  if (types.includes('meal_takeaway')) return '📦';
+  if (!Array.isArray(types)) return '🍽️';
+  if (types.includes('cafe'))            return '☕';
+  if (types.includes('bakery'))          return '🥐';
+  if (types.includes('bar'))             return '🍸';
+  if (types.includes('meal_takeaway'))   return '📦';
   return '🍽️';
 };
 
-window.fmtDuration = function(secs) {
+window.fmtDur = function(secs) {
   if (!secs) return '—';
   const m = Math.round(secs / 60);
-  if (m < 60) return m + ' min';
-  return Math.floor(m/60) + 'h ' + (m%60) + 'm';
+  return m < 60 ? m + ' min' : Math.floor(m/60) + 'h ' + (m%60) + 'm';
 };
 
-window.fmtDist = function(metres) {
-  if (!metres) return '';
-  if (metres < 1000) return metres + ' m';
-  return (metres/1000).toFixed(1) + ' km';
+window.fmtDist = function(m) {
+  if (!m) return '';
+  return m < 1000 ? m + ' m' : (m/1000).toFixed(1) + ' km';
+};
+
+window.cuisineTag = function(types) {
+  if (!Array.isArray(types)) return null;
+  const map = {
+    cafe:'Café', bakery:'Bakery', bar:'Bar',
+    meal_takeaway:'Takeaway', meal_delivery:'Delivery',
+    fast_food:'Fast Food', restaurant:'Restaurant'
+  };
+  for (const t of types) if (map[t]) return map[t];
+  return null;
+};
+
+window.costDots = function(level) {
+  if (!level) return null;
+  return [1,2,3,4].map(function(i) {
+    return React.createElement(
+      'span', { key: i, className: i <= level ? 'cost__on' : 'cost__off' }, 'RM'
+    );
+  });
+};
+
+// ── HalalBadge ─────────────────────────────────────────────────────────────
+
+const HalalBadge = ({ score }) => {
+  const cfg = {
+    cert:     { cls: 'halal--cert',     label: 'Halal' },
+    friendly: { cls: 'halal--friendly', label: 'Muslim Friendly' },
+    unsure:   { cls: 'halal--unsure',   label: 'Verify Halal' },
+  }[score] || { cls: 'halal--cert', label: 'Halal' };
+  return (
+    <span className={`halal ${cfg.cls}`}>
+      <span className="halal__dot" />
+      {cfg.label}
+    </span>
+  );
 };
 
 // ── PlaceCard ──────────────────────────────────────────────────────────────
 
 const PlaceCard = ({ place, selected, travel, onSelect }) => {
-  const score  = window.halalScore(place);
-  const inMall = window.isMall(place);
-  const photo  = window.photoUrl(place, 112);
-  const emoji  = window.typeEmoji(place.types);
+  // Guard: skip rendering if place is malformed
+  if (!place || !place.place_id) return null;
 
-  const halalClass = { likely:'halal-likely', check:'halal-check', unsure:'halal-unsure' }[score];
+  const score  = window.halalScore(place);
+  const photo  = window.photoUrl(place, 192);
+  const emoji  = window.typeEmoji(place.types);
+  const ctag   = window.cuisineTag(place.types);
+  const inMall = window.isMall(place);
+  const isOpen = place.opening_hours && place.opening_hours.open_now;
 
   return (
     <div
-      className={`place-card${selected ? ' selected' : ''}`}
+      className={`card${selected ? ' card--sel' : ''}`}
       onClick={() => onSelect(place)}
     >
-      {photo
-        ? <img className="place-thumb" src={photo} alt={place.name} loading="lazy" />
-        : <div className="place-thumb-placeholder">{emoji}</div>
-      }
+      <div className="card__thumb">
+        {photo
+          ? <img src={photo} alt={place.name} loading="lazy" />
+          : <div className="card__thumb-ph">{emoji}</div>
+        }
+        {isOpen === false && <div className="card__closed">Closed</div>}
+      </div>
 
-      <div className="place-info">
-        <div className="place-name">{place.name}</div>
-
-        <div className="place-meta">
-          {place.rating && (
-            <span className="rating">⭐ {place.rating} ({place.user_ratings_total || 0})</span>
-          )}
-          <span className={`halal-badge ${halalClass}`}>
-            {window.halalLabel[score]}
-          </span>
-          {inMall && <span className="mall-badge">🏬 Mall</span>}
-        </div>
-
-        <div className="place-addr">
-          {place.vicinity || place.formatted_address || ''}
-        </div>
-
-        {travel && (
-          <div className="place-travel">
-            {travel.walk  && <span className="walk">🚶 {window.fmtDuration(travel.walk.duration?.value)}</span>}
-            {travel.walk && travel.drive && <span> · </span>}
-            {travel.drive && <span className="drive">🚗 {window.fmtDuration(travel.drive.duration?.value)}</span>}
+      <div className="card__body">
+        <div className="card__topline">
+          <div>
+            <h3 className="card__name">{place.name}</h3>
+            {place.vicinity && (
+              <span className="card__area">{place.vicinity.split(',')[0]}</span>
+            )}
           </div>
-        )}
+          {place.rating && (
+            <span className="rating">⭐ {place.rating}</span>
+          )}
+        </div>
+
+        <div className="card__tags">
+          <HalalBadge score={score} />
+          {ctag && <span className="cuisine-tag">{ctag}</span>}
+          {inMall && <span className="cuisine-tag">🏬 Mall</span>}
+          {place.price_level && (
+            <span className="cost">{window.costDots(place.price_level)}</span>
+          )}
+        </div>
+
+        <div className="card__foot">
+          {travel && travel.walk && (
+            <span className="meta">
+              🚶 <span className="meta__min">{window.fmtDur(travel.walk.duration && travel.walk.duration.value)}</span>
+            </span>
+          )}
+          {travel && travel.drive && (
+            <span className="meta">
+              🚗 <span className="meta__min">{window.fmtDur(travel.drive.duration && travel.drive.duration.value)}</span>
+            </span>
+          )}
+          <button
+            className="card__dir"
+            onClick={function(e){ e.stopPropagation(); onSelect(place); }}
+          >
+            Details →
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -104,122 +160,142 @@ const PlaceCard = ({ place, selected, travel, onSelect }) => {
 const DetailPanel = ({ place, details, travel, onClose }) => {
   if (!place) return null;
 
-  const score    = window.halalScore(place);
-  const inMall   = window.isMall(place);
-  const halalClass = { likely:'halal-likely', check:'halal-check', unsure:'halal-unsure' }[score];
+  const score  = window.halalScore(place);
+  const photos = [];
+  try {
+    const src = (details && details.photos) ? details.photos : (place.photos || []);
+    src.slice(0, 6).forEach(function(p) {
+      try { photos.push(p.getUrl({ maxWidth: 400 })); } catch(e) {}
+    });
+  } catch(e) {}
 
-  const photos = (details?.photos || place.photos || []).slice(0, 6).map(p =>
-    p.getUrl({ maxWidth: 320 })
-  );
+  const todayIdx = new Date().getDay();
+  const hours    = (details && details.opening_hours && details.opening_hours.weekday_text) || [];
+  const isOpen   = details
+    ? (details.opening_hours && details.opening_hours.open_now)
+    : (place.opening_hours && place.opening_hours.open_now);
 
-  const todayIdx = new Date().getDay(); // 0=Sun
-  const hours = details?.opening_hours?.weekday_text || [];
-
-  const lat = place.geometry?.location?.lat();
-  const lng = place.geometry?.location?.lng();
-  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${place.place_id}`;
+  const lat     = place.geometry && place.geometry.location ? place.geometry.location.lat() : 0;
+  const lng     = place.geometry && place.geometry.location ? place.geometry.location.lng() : 0;
+  const mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + lat + ',' + lng +
+                  '&destination_place_id=' + place.place_id;
 
   return (
-    <div id="detail">
-      <div className="detail-close" onClick={onClose}>✕</div>
-
-      {photos.length > 0 && (
-        <div className="detail-photos">
-          {photos.map((url, i) => (
-            <img key={i} src={url} alt={`${place.name} photo ${i+1}`} />
-          ))}
-        </div>
-      )}
-
-      <div className="detail-name">{place.name}</div>
-
-      <div className="detail-badges">
-        <span className={`halal-badge ${halalClass}`}>{window.halalLabel[score]}</span>
-        {inMall && <span className="mall-badge">🏬 Mall</span>}
-        {place.rating && <span className="rating">⭐ {place.rating} ({place.user_ratings_total})</span>}
-        {details?.price_level && (
-          <span style={{fontSize:'12px', color:'var(--text-muted)'}}>
-            {'RM '.repeat(details.price_level)}
-          </span>
-        )}
+    <div className="detail">
+      <div className="detail__head">
+        <button className="detail__back" onClick={onClose}>←</button>
+        <span className="detail__crumb">Restaurant detail</span>
       </div>
 
-      {/* Travel times */}
-      {travel && (
-        <div className="detail-section">
-          <div className="sec-title">Travel from Merdeka 118</div>
-          <div className="travel-grid">
-            {travel.walk && (
-              <div className="travel-box">
-                <div className="mode">🚶 Walk</div>
-                <div className="dur">{window.fmtDuration(travel.walk.duration?.value)}</div>
-                <div className="dist">{window.fmtDist(travel.walk.distance?.value)}</div>
+      <div className="detail__body">
+        {photos.length > 0 && (
+          <div style={{display:'flex',gap:'8px',overflowX:'auto',marginBottom:'16px',scrollbarWidth:'none'}}>
+            {photos.map(function(url, i) {
+              return <img key={i} src={url} alt="" style={{height:'140px',borderRadius:'10px',objectFit:'cover',flexShrink:0}} />;
+            })}
+          </div>
+        )}
+
+        <h2 className="detail__name">{place.name}</h2>
+        {place.vicinity && <div className="detail__area">{place.vicinity}</div>}
+
+        <div className="detail__tags">
+          <HalalBadge score={score} />
+          {isOpen !== undefined && isOpen !== null && (
+            <span className={`open-tag ${isOpen ? 'open-tag--on' : 'open-tag--off'}`}>
+              {isOpen ? '● Open now' : '● Closed'}
+            </span>
+          )}
+          {details && details.price_level && (
+            <span className="cost">{window.costDots(details.price_level)}</span>
+          )}
+          {place.rating && (
+            <span className="rating rating--lg">⭐ {place.rating} ({place.user_ratings_total || 0})</span>
+          )}
+        </div>
+
+        {score !== 'cert' && (
+          <div className="detail__note">
+            <div className="detail__note-ic">!</div>
+            {score === 'friendly'
+              ? 'This place appears Muslim-friendly but may not be certified halal. Please verify with the restaurant directly.'
+              : 'Halal status unclear. Please verify directly with the restaurant before ordering.'}
+          </div>
+        )}
+
+        {travel && (
+          <div className="detail__section">
+            <div className="detail__h">Travel from Merdeka 118</div>
+            <div className="travel-grid">
+              {travel.walk && (
+                <div className="travel-box">
+                  <div className="travel-box__mode">🚶 Walk</div>
+                  <div className="travel-box__time">{window.fmtDur(travel.walk.duration && travel.walk.duration.value)}</div>
+                  <div className="travel-box__dist">{window.fmtDist(travel.walk.distance && travel.walk.distance.value)}</div>
+                </div>
+              )}
+              {travel.drive && (
+                <div className="travel-box">
+                  <div className="travel-box__mode">🚗 Drive</div>
+                  <div className="travel-box__time">{window.fmtDur(travel.drive.duration && travel.drive.duration.value)}</div>
+                  <div className="travel-box__dist">{window.fmtDist(travel.drive.distance && travel.drive.distance.value)}</div>
+                </div>
+              )}
+              {travel.transit && (
+                <div className="travel-box">
+                  <div className="travel-box__mode">🚇 Transit</div>
+                  <div className="travel-box__time">{window.fmtDur(travel.transit.duration && travel.transit.duration.value)}</div>
+                  <div className="travel-box__dist">{window.fmtDist(travel.transit.distance && travel.transit.distance.value)}</div>
+                </div>
+              )}
+            </div>
+            <a className="btn btn--primary" href={mapsUrl} target="_blank" rel="noopener">
+              Open in Google Maps ↗
+            </a>
+          </div>
+        )}
+
+        {details && (details.formatted_phone_number || details.website) && (
+          <div className="detail__section">
+            <div className="detail__h">Contact</div>
+            {details.formatted_phone_number && (
+              <div className="detail__row">
+                <span>📞</span>
+                <a href={'tel:' + details.formatted_phone_number}>{details.formatted_phone_number}</a>
               </div>
             )}
-            {travel.drive && (
-              <div className="travel-box">
-                <div className="mode">🚗 Drive</div>
-                <div className="dur">{window.fmtDuration(travel.drive.duration?.value)}</div>
-                <div className="dist">{window.fmtDist(travel.drive.distance?.value)}</div>
-              </div>
-            )}
-            {travel.transit && (
-              <div className="travel-box">
-                <div className="mode">🚇 Transit</div>
-                <div className="dur">{window.fmtDuration(travel.transit.duration?.value)}</div>
-                <div className="dist">{window.fmtDist(travel.transit.distance?.value)}</div>
+            {details.website && (
+              <div className="detail__row">
+                <span>🌐</span>
+                <a href={details.website} target="_blank" rel="noopener">
+                  {details.website.replace(/^https?:\/\//, '').replace(/\/$/, '').slice(0, 45)}
+                </a>
               </div>
             )}
           </div>
-          <a className="directions-btn" href={mapsUrl} target="_blank" rel="noopener">
-            Open in Google Maps ↗
-          </a>
-        </div>
-      )}
+        )}
 
-      {/* Contact */}
-      {(details?.formatted_phone_number || details?.website) && (
-        <div className="detail-section">
-          <div className="sec-title">Contact</div>
-          {details.formatted_phone_number && (
-            <div className="detail-row">
-              <span>📞</span>
-              <a href={`tel:${details.formatted_phone_number}`} style={{color:'var(--text-muted)', textDecoration:'none'}}>
-                {details.formatted_phone_number}
-              </a>
+        {hours.length > 0 && (
+          <div className="detail__section">
+            <div className="detail__h">Opening Hours</div>
+            <div className="hours-list">
+              {hours.map(function(line, i) {
+                return (
+                  <div key={i} className={i === ((todayIdx + 6) % 7) ? 'hours-today' : ''}>
+                    {line}
+                  </div>
+                );
+              })}
             </div>
-          )}
-          {details.website && (
-            <div className="detail-row">
-              <span>🌐</span>
-              <a href={details.website} target="_blank" rel="noopener" style={{color:'var(--accent)', textDecoration:'none', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'200px', display:'inline-block'}}>
-                {details.website.replace(/^https?:\/\//, '').slice(0, 40)}
-              </a>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Hours */}
-      {hours.length > 0 && (
-        <div className="detail-section">
-          <div className="sec-title">Opening Hours</div>
-          <div className="hours-list">
-            {hours.map((line, i) => (
-              <div key={i} className={i === ((todayIdx + 6) % 7) ? 'hours-today' : ''}>
-                {line}
-              </div>
-            ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Address */}
-      <div className="detail-section">
-        <div className="sec-title">Address</div>
-        <div className="detail-row">
-          <span>📍</span>
-          <span>{details?.formatted_address || place.vicinity || '—'}</span>
+        <div className="detail__section">
+          <div className="detail__h">Address</div>
+          <div className="detail__row">
+            <span>📍</span>
+            <span>{(details && details.formatted_address) || place.vicinity || '—'}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -228,3 +304,4 @@ const DetailPanel = ({ place, details, travel, onClose }) => {
 
 window.PlaceCard   = PlaceCard;
 window.DetailPanel = DetailPanel;
+window.HalalBadge  = HalalBadge;
