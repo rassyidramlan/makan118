@@ -1,439 +1,240 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Makan@118</title>
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Makan@118 — Halal makan near Merdeka 118</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root{
+  --primary:#2E7D5B; --primary-dk:#1F5C42; --accent:#E0892F;
+  --bg:#FAFAF6; --surface:#FFFFFF; --text:#1C2420; --muted:#6E7873; --border:#EAEAE2;
+  --ph-bg:#F1F1EA;
+  --font-ui:'Plus Jakarta Sans',sans-serif; --font-display:'Plus Jakarta Sans',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --panelw:444px; --r:14px; --r-sm:10px;
+  --shadow:0 1px 2px rgba(20,30,25,.04),0 8px 30px rgba(20,30,25,.07);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;
+  -webkit-font-smoothing:antialiased;}
+#root,.app{height:100%;}
+button{font-family:inherit;cursor:pointer;}
 
-  :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface2: #22263a;
-    --border: #2d3148;
-    --accent: #ff6b35;
-    --accent2: #ffb347;
-    --halal-green: #22c55e;
-    --halal-amber: #f59e0b;
-    --halal-red: #ef4444;
-    --text: #e8eaf2;
-    --text-muted: #7c8098;
-    --text-dim: #4a4f6a;
-    --map-w: 58%;
-    --panel-w: 42%;
-  }
+/* topbar */
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+.topbar{display:flex;align-items:center;gap:22px;padding:14px 22px;
+  background:var(--surface);border-bottom:1px solid var(--border);flex:none;}
+.brand__mark{font-weight:800;font-size:22px;letter-spacing:-.02em;color:var(--text);line-height:1;}
+.brand__at{color:var(--primary);}
+.brand__sub{font-size:11.5px;color:var(--muted);letter-spacing:.01em;margin-top:1px;}
+.loc{display:flex;align-items:center;gap:10px;padding-left:22px;border-left:1px solid var(--border);}
+.loc__dot{width:10px;height:10px;border-radius:50%;background:var(--primary);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 18%,transparent);}
+.loc__label{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;}
+.loc__name{font-size:14px;font-weight:700;}
+.topbar__spacer{flex:1;}
+.count-pill{font-family:var(--font-mono);font-size:12px;font-weight:500;
+  color:var(--primary-dk);background:color-mix(in srgb,var(--primary) 10%,var(--surface));
+  border:1px solid color-mix(in srgb,var(--primary) 20%,transparent);
+  padding:7px 13px;border-radius:100px;}
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-  }
+/* filters */
+.filters{background:var(--surface);border-bottom:1px solid var(--border);padding:13px 22px 15px;flex:none;}
+.filters__chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px;}
+.chip{border:1px solid var(--border);background:var(--surface);color:var(--text);
+  padding:7px 15px;border-radius:100px;font-size:13px;font-weight:600;transition:.15s;}
+.chip:hover{border-color:var(--primary);color:var(--primary-dk);}
+.chip--on{background:var(--primary);border-color:var(--primary);color:#fff;}
+.filters__controls{display:flex;gap:26px;align-items:flex-end;flex-wrap:wrap;}
+.ctrl{display:flex;flex-direction:column;gap:6px;}
+.ctrl__label{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;}
+.ctrl__label strong{color:var(--text);}
+.ctrl--dist{min-width:200px;flex:1;max-width:300px;}
+.seg{display:inline-flex;background:color-mix(in srgb,var(--text) 5%,var(--surface));
+  border:1px solid var(--border);border-radius:100px;padding:3px;}
+.seg__btn{border:none;background:transparent;color:var(--muted);font-weight:600;
+  padding:7px 16px;border-radius:100px;font-size:12.5px;transition:.15s;white-space:nowrap;}
+.seg__btn--on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.1);}
+.range{-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;
+  background:var(--border);width:100%;margin-top:8px;}
+.range::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:var(--primary);border:3px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer;}
+.range::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--primary);
+  border:3px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer;}
 
-  /* ── LEFT PANEL ── */
-  #panel {
-    width: var(--panel-w);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid var(--border);
-    overflow: hidden;
-  }
+/* mobile view tabs */
+.vtabs{display:none;gap:0;background:var(--surface);border-bottom:1px solid var(--border);flex:none;}
+.vtab{flex:1;border:none;background:transparent;padding:13px;font-weight:700;font-size:14px;
+  color:var(--muted);border-bottom:2px solid transparent;}
+.vtab--on{color:var(--primary-dk);border-bottom-color:var(--primary);}
 
-  #header {
-    padding: 16px 18px 12px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
+/* layout */
+.stage{flex:1;min-height:0;display:grid;grid-template-columns:var(--panelw) 1fr;}
+.panel{background:var(--bg);overflow-y:auto;min-height:0;border-right:1px solid var(--border);}
+.mapwrap{position:relative;min-height:0;background:#e8eceb;}
+.map{height:100%;width:100%;}
 
-  #header h1 {
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: -0.3px;
-  }
-  #header h1 span { color: var(--accent); }
+/* cards */
+.list{padding:16px;}
+.listhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  padding:2px 2px 12px;flex-wrap:wrap;}
+.listhead__count{font-size:13px;font-weight:700;}
+.listhead__sort{font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+.verify{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;margin-bottom:14px;
+  background:color-mix(in srgb,var(--accent) 9%,var(--surface));
+  border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);
+  border-radius:10px;font-size:11.8px;line-height:1.45;
+  color:color-mix(in srgb,var(--text) 78%,var(--accent));}
+.verify__dot{flex:none;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:5px;}
+.card{display:flex;gap:13px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:11px;margin-bottom:11px;transition:.15s;
+  position:relative;cursor:pointer;}
+.card:hover{border-color:color-mix(in srgb,var(--primary) 45%,var(--border));box-shadow:var(--shadow);}
+.card--sel{border-color:var(--primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--primary) 25%,transparent);}
+.card__thumb{flex:none;width:96px;border-radius:var(--r-sm);overflow:hidden;position:relative;background:var(--ph-bg);}
+.card__thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.card__thumb-ph{width:100%;height:100%;min-height:96px;display:flex;align-items:center;
+  justify-content:center;font-size:32px;}
+.card__closed{position:absolute;inset:0;background:rgba(28,36,32,.55);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+.card__body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;}
+.card__topline{display:flex;align-items:flex-start;gap:8px;justify-content:space-between;}
+.card__name{font-size:15.5px;font-weight:700;margin:0;line-height:1.25;letter-spacing:-.01em;}
+.card__area{font-size:11px;color:var(--muted);display:inline-flex;align-items:center;}
+.card__area::before{content:"·";margin-right:6px;color:var(--border);}
+.rating{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--text);
+  background:color-mix(in srgb,var(--accent) 16%,var(--surface));padding:2px 7px;border-radius:6px;flex:none;margin-top:2px;}
+.rating--lg{font-size:14px;padding:4px 10px;}
+.card__tags{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.cuisine-tag{font-size:11.5px;font-weight:600;color:var(--muted);white-space:nowrap;
+  background:color-mix(in srgb,var(--text) 5%,var(--surface));padding:3px 9px;border-radius:6px;}
+.cost{font-family:var(--font-mono);font-size:12.5px;font-weight:700;letter-spacing:1px;}
+.cost__on{color:var(--primary);} .cost__off{color:var(--border);}
+.card__foot{display:flex;align-items:center;gap:14px;margin-top:auto;padding-top:3px;}
+.meta{font-family:var(--font-mono);font-size:11.5px;color:var(--muted);display:inline-flex;gap:5px;align-items:center;}
+.meta__min{color:var(--text);font-weight:700;}
+.card__dir{margin-left:auto;border:1px solid var(--border);background:var(--surface);
+  color:var(--primary-dk);font-weight:700;font-size:12px;padding:6px 12px;border-radius:8px;transition:.15s;}
+.card__dir:hover{background:var(--primary);border-color:var(--primary);color:#fff;}
 
-  #header .sub {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 2px;
-    font-family: 'DM Mono', monospace;
-  }
+/* halal badge */
+.halal{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;width:fit-content;}
+.halal__dot{width:7px;height:7px;border-radius:50%;}
+.halal--cert{color:var(--primary-dk);} .halal--cert .halal__dot{background:var(--primary);}
+.halal--friendly{color:#9A6614;} .halal--friendly .halal__dot{background:var(--accent);}
+.halal--unsure{color:#9A2C2C;} .halal--unsure .halal__dot{background:#9A2C2C;}
 
-  /* search bar */
-  #search-row {
-    display: flex;
-    gap: 8px;
-    padding: 10px 18px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
+/* empty / loading */
+.empty{padding:50px 24px;text-align:center;}
+.empty__h{font-weight:700;font-size:16px;margin:0 0 4px;}
+.empty__p{color:var(--muted);margin:0;font-size:13.5px;}
+.spinner-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:200px;gap:12px;color:var(--muted);font-size:13px;}
+.spinner{width:28px;height:28px;border:2.5px solid var(--border);
+  border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
-  #search-row input {
-    flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 12px;
-    color: var(--text);
-    font-size: 13px;
-    font-family: 'DM Sans', sans-serif;
-    outline: none;
-  }
-  #search-row input:focus { border-color: var(--accent); }
-  #search-row input::placeholder { color: var(--text-dim); }
+/* detail panel */
+.detail{background:var(--surface);min-height:100%;}
+.detail__head{display:flex;align-items:center;gap:10px;padding:13px 16px;position:sticky;top:0;
+  background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--border);z-index:5;}
+.detail__back{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);
+  background:var(--surface);font-size:17px;color:var(--text);line-height:1;}
+.detail__back:hover{background:var(--bg);}
+.detail__crumb{font-size:13px;font-weight:600;color:var(--muted);}
+.detail__body{padding:18px 18px 28px;}
+.detail__name{font-size:23px;font-weight:800;letter-spacing:-.02em;margin:0 0 4px;line-height:1.12;}
+.detail__area{font-size:12.5px;color:var(--muted);font-weight:600;}
+.detail__note{display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:9px 12px;
+  background:color-mix(in srgb,var(--accent) 11%,var(--surface));border-radius:9px;
+  font-size:12.5px;font-weight:600;color:color-mix(in srgb,var(--text) 75%,var(--accent));}
+.detail__note-ic{flex:none;width:17px;height:17px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+.detail__tags{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:11px 0;}
+.open-tag{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:6px;}
+.open-tag--on{color:var(--primary-dk);background:color-mix(in srgb,var(--primary) 12%,var(--surface));}
+.open-tag--off{color:#9A2C2C;background:color-mix(in srgb,#9A2C2C 10%,var(--surface));}
+.detail__section{margin-top:24px;}
+.detail__h{font-size:11px;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--muted);font-weight:700;margin:0 0 11px;}
 
-  #search-row button {
-    background: var(--accent);
-    border: none;
-    border-radius: 8px;
-    padding: 8px 14px;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    font-family: 'DM Sans', sans-serif;
-  }
-  #search-row button:hover { background: #e05a28; }
+/* travel */
+.travel-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.travel-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.travel-box__mode{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);font-weight:700;font-family:var(--font-mono);margin-bottom:6px;}
+.travel-box__time{font-size:20px;font-weight:800;line-height:1;}
+.travel-box__dist{font-size:11.5px;color:var(--muted);margin-top:3px;}
+.btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:10px;
+  padding:12px 18px;font-weight:700;font-size:14px;text-decoration:none;transition:.15s;cursor:pointer;}
+.btn--primary{background:var(--primary);color:#fff;}
+.btn--primary:hover{background:var(--primary-dk);}
 
-  /* filter chips */
-  #filter-row {
-    display: flex;
-    gap: 6px;
-    padding: 8px 18px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    overflow-x: auto;
-    flex-shrink: 0;
-    scrollbar-width: none;
-  }
-  #filter-row::-webkit-scrollbar { display: none; }
+/* contact */
+.detail__row{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--muted);margin-bottom:8px;}
+.detail__row a{color:var(--primary-dk);text-decoration:none;}
+.detail__row a:hover{text-decoration:underline;}
+.hours-list{font-size:12px;line-height:1.9;color:var(--muted);}
+.hours-today{color:var(--primary-dk);font-weight:700;}
 
-  .chip {
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 4px 10px;
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    background: transparent;
-    color: var(--text-muted);
-    font-family: 'DM Sans', sans-serif;
-    transition: all .15s;
-  }
-  .chip.active, .chip:hover {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-  }
-  .chip.halal-chip.active { background: var(--halal-green); border-color: var(--halal-green); }
+/* map legend */
+.maplegend{position:absolute;bottom:32px;left:14px;z-index:5;display:flex;gap:14px;
+  background:rgba(255,255,255,.94);backdrop-filter:blur(6px);
+  border:1px solid var(--border);border-radius:10px;padding:9px 13px;box-shadow:var(--shadow);}
+.maplegend__item{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--text);}
+.lg-dot{width:11px;height:11px;border-radius:50%;}
+.lg-dot--cert{background:var(--primary);}
+.lg-dot--friendly{background:#fff;border:2px solid var(--primary);}
+.lg-dot--unsure{background:#9A2C2C;}
 
-  /* sort row */
-  #sort-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 18px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  #sort-row .label { font-size: 11px; color: var(--text-muted); }
-  #sort-row select {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 3px 8px;
-    color: var(--text);
-    font-size: 11px;
-    font-family: 'DM Sans', sans-serif;
-    outline: none;
-    cursor: pointer;
-  }
-  #sort-row .count {
-    margin-left: auto;
-    font-size: 11px;
-    color: var(--text-dim);
-    font-family: 'DM Mono', monospace;
-  }
-
-  /* place list */
-  #list {
-    flex: 1;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-
-  .place-card {
-    padding: 12px 18px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    display: flex;
-    gap: 12px;
-    transition: background .12s;
-    position: relative;
-  }
-  .place-card:hover { background: var(--surface); }
-  .place-card.selected { background: var(--surface2); border-left: 3px solid var(--accent); }
-
-  .place-thumb {
-    width: 56px;
-    height: 56px;
-    border-radius: 8px;
-    object-fit: cover;
-    flex-shrink: 0;
-    background: var(--surface2);
-  }
-  .place-thumb-placeholder {
-    width: 56px;
-    height: 56px;
-    border-radius: 8px;
-    background: var(--surface2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    flex-shrink: 0;
-  }
-
-  .place-info { flex: 1; min-width: 0; }
-
-  .place-name {
-    font-size: 13px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .place-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 3px;
-    flex-wrap: wrap;
-  }
-
-  .rating {
-    font-size: 11px;
-    color: var(--accent2);
-    font-weight: 500;
-  }
-
-  .halal-badge {
-    font-size: 10px;
-    font-weight: 600;
-    font-family: 'DM Mono', monospace;
-    padding: 1px 6px;
-    border-radius: 4px;
-    letter-spacing: .3px;
-  }
-  .halal-likely { background: rgba(34,197,94,.18); color: var(--halal-green); }
-  .halal-check  { background: rgba(245,158,11,.18); color: var(--halal-amber); }
-  .halal-unsure { background: rgba(239,68,68,.18);  color: var(--halal-red); }
-
-  .mall-badge {
-    font-size: 10px;
-    background: rgba(99,102,241,.2);
-    color: #818cf8;
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-weight: 500;
-  }
-
-  .place-addr {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 3px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .place-travel {
-    font-size: 10px;
-    color: var(--text-dim);
-    margin-top: 3px;
-    font-family: 'DM Mono', monospace;
-  }
-  .place-travel .walk { color: #60a5fa; }
-  .place-travel .drive { color: #a78bfa; }
-
-  /* detail panel overlay */
-  #detail {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    max-height: 72vh;
-    background: var(--surface);
-    border-top: 2px solid var(--accent);
-    border-radius: 16px 16px 0 0;
-    overflow-y: auto;
-    z-index: 100;
-    padding: 20px 20px 32px;
-    box-shadow: 0 -8px 40px rgba(0,0,0,.5);
-    transition: transform .25s ease;
-  }
-
-  .detail-close {
-    position: absolute;
-    top: 14px; right: 16px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    width: 28px; height: 28px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    font-size: 14px;
-    color: var(--text-muted);
-  }
-
-  .detail-photos {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    margin-bottom: 14px;
-    scrollbar-width: none;
-  }
-  .detail-photos::-webkit-scrollbar { display: none; }
-  .detail-photos img {
-    height: 120px;
-    border-radius: 10px;
-    object-fit: cover;
-    flex-shrink: 0;
-  }
-
-  .detail-name { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
-
-  .detail-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-
-  .detail-section { margin-bottom: 14px; }
-  .detail-section .sec-title {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--text-dim);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-    font-family: 'DM Mono', monospace;
-  }
-
-  .detail-row {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-bottom: 4px;
-    display: flex;
-    gap: 6px;
-  }
-  .detail-row span:first-child { color: var(--text-dim); width: 16px; text-align: center; }
-
-  .hours-list { font-size: 11px; color: var(--text-muted); line-height: 1.8; }
-  .hours-today { color: var(--accent2); font-weight: 500; }
-
-  .travel-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .travel-box {
-    background: var(--surface2);
-    border-radius: 8px;
-    padding: 10px 12px;
-  }
-  .travel-box .mode { font-size: 10px; color: var(--text-dim); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
-  .travel-box .dur  { font-size: 16px; font-weight: 600; }
-  .travel-box .dist { font-size: 11px; color: var(--text-muted); }
-
-  .directions-btn {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 8px 16px;
-    background: var(--accent);
-    color: #fff;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-    border: none;
-    font-family: 'DM Sans', sans-serif;
-  }
-  .directions-btn:hover { background: #e05a28; }
-
-  /* map */
-  #map {
-    width: var(--map-w);
-    height: 100vh;
-  }
-
-  /* loading / empty */
-  .state-msg {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 200px;
-    gap: 10px;
-    color: var(--text-dim);
-    font-size: 13px;
-  }
-  .spinner {
-    width: 28px; height: 28px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* scrollbar */
-  #list::-webkit-scrollbar { width: 4px; }
-  #list::-webkit-scrollbar-track { background: transparent; }
-  #list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-  /* mobile */
-  @media (max-width: 700px) {
-    body { flex-direction: column; overflow: auto; }
-    #panel { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
-    #map { width: 100%; height: 45vh; }
-    body { height: auto; }
-    #list { max-height: 50vh; }
-  }
+/* responsive */
+@media(max-width:880px){
+  .topbar{gap:14px;padding:11px 16px;}
+  .brand__sub{display:none;}
+  .loc{padding-left:14px;}
+  .filters{padding:11px 16px 13px;}
+  .ctrl--dist{max-width:none;width:100%;}
+  .vtabs{display:flex;}
+  .stage{display:block!important;position:relative;}
+  .panel,.mapwrap{position:absolute!important;inset:0;width:auto!important;border:none!important;}
+  .app.view-list .mapwrap{display:none;}
+  .app.view-map .panel{display:none;}
+}
+@media(max-width:520px){
+  .count-pill{display:none;}
+  .card__thumb{width:78px;}
+}
 </style>
 </head>
 <body>
-<div id="panel">
-  <div id="root"></div>
-</div>
-<div id="map"></div>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <script>
 window.CONFIG = {
-  GOOGLE_API_KEY: "AIzaSyAAxO_2z46n_GLi2pjR-96hTkGLddi3TlY",
+  GOOGLE_API_KEY: "REPLACE_WITH_YOUR_KEY",
   MERDEKA118: { lat: 3.1390, lng: 101.7118 },
-  SEARCH_RADIUS: 1500   // metres — tweak freely
+  SEARCH_RADIUS: 1500
 };
 
-// Halal keyword scoring
 window.HALAL_KEYWORDS = {
-  likely:  ['halal','muslim','muslimah','nasi','roti canai','mamak','mee','makan','warung','kedai makan','sup kambing','nasi lemak','teh tarik','kopitiam malay'],
-  check:   ['chinese','western','japanese','korean','thai','indian','cafe','kopitiam','dim sum','pork-free','bak kut teh','wonton','char siu'],
-  unlikely:['pork','babi','bacon','lard','ham','ribs','bbq pork','tonkotsu']
+  cert:     ['halal','muslim','muslimah','nasi','roti canai','mamak','mee','warung',
+             'kedai makan','sup kambing','nasi lemak','teh tarik'],
+  friendly: ['chinese','western','japanese','korean','thai','indian','cafe',
+             'kopitiam','dim sum','pork-free'],
+  unlikely: ['pork','babi','bacon','lard','ham','bbq pork','tonkotsu']
 };
 
-// Known mall names near KL city centre
 window.KL_MALLS = [
   'merdeka 118','pavilion','suria klcc','klcc','mid valley','the gardens',
   'nu sentral','lot 10','sungei wang','berjaya times square','imbi plaza',
@@ -441,7 +242,7 @@ window.KL_MALLS = [
 ];
 </script>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAAxO_2z46n_GLi2pjR-96hTkGLddi3TlY&libraries=places"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=REPLACE_WITH_YOUR_KEY&libraries=places&callback=initMap" async defer></script>
 <script type="text/babel" src="components.jsx"></script>
 <script type="text/babel" src="app.jsx"></script>
 </body>
