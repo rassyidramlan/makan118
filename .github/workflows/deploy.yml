@@ -19,5 +19,4 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add index.html
-          git commit -m "Inject API key [skip ci]"
-          git push
+          git diff --staged --quiet && echo "Nothing to commit, skipping" || (git commit -m "Inject API key [skip ci]" && git push)
