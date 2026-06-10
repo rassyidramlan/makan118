@@ -1,61 +1,67 @@
-# Makan@118 — Live Restaurant Finder
+# Makan@118
 
-Find food near Merdeka 118, Kuala Lumpur.
+Find halal and Muslim-friendly food near Menara Merdeka 118, Kuala Lumpur.
 
-## Features
-- Live Google Places search with photos
-- Halal scoring engine (Likely / Check / Not Halal)
-- Mall detection badge
-- Travel times from Merdeka 118 (walk · drive · transit)
-- Full detail panel: hours, phone, website, directions
-- Filter chips: Mamak, Cafe, Fast Food, Western, Japanese, Korean
-- Sort by: Top Rated / Most Reviews / Halal First
-- Dark map with custom styling
+Live at: **https://makan118.netlify.app**
 
-## Setup (5 minutes)
+---
 
-### 1. Get a Google Maps API key
-- Go to https://console.cloud.google.com/
-- Create a project → Enable these APIs:
-  - Maps JavaScript API
-  - Places API
-  - Distance Matrix API
+## What it does
 
-### 2. Replace the key
-In `index.html`, replace **both** instances of `REPLACE_WITH_YOUR_KEY`:
+- Searches 150–300+ restaurants, cafes, kopitiams, bakeries and food courts within a adjustable radius (up to 10km)
+- Estimates halal status (Certified / Muslim-friendly / Unverified) from place names and types
+- Filters by cuisine type, halal status, and travel mode (Walk / Transit / Drive)
+- Shows travel time and distance from Merdeka 118 for each place
+- Full detail panel with photos, opening hours, phone, website, and Google Maps directions
+- Colour-coded map pins (green = Halal, amber = Friendly, red = Unverified)
 
-```html
-window.CONFIG = { GOOGLE_API_KEY: "AIza...", ... }
-...
-<script src="https://maps.googleapis.com/maps/api/js?key=AIza...">
-```
+---
 
-### 3. Deploy (pick one)
+## How to make changes
 
-**GitHub Pages** (free):
-1. Push files to a GitHub repo
-2. Settings → Pages → Source: main branch / root
-3. Your URL: `https://yourusername.github.io/reponame`
+All app logic lives in three files:
 
-**Netlify** (free, drag & drop):
-1. Go to https://netlify.com
-2. Drag the folder onto the deploy area
-3. Done — live URL in 30 seconds
+| File | What it controls |
+|---|---|
+| `index.html` | Layout, CSS, config (coordinates, API key placeholder, halal keywords, mall list) |
+| `components.jsx` | PlaceCard, DetailPanel, HalalBadge, utility functions |
+| `app.jsx` | Search logic, filters, map, state management |
 
-**Local** (for testing only):
-```bash
-npx serve .
-```
-(Do NOT open index.html directly as a file — Google Maps requires HTTP)
+Edit any file on GitHub → commit → Netlify auto-deploys within ~1 minute.
 
-## Tweak search radius
-In `index.html`:
+---
+
+## Key settings (in index.html)
+
 ```js
 window.CONFIG = {
-  SEARCH_RADIUS: 1500  // metres from Merdeka 118
-}
+  MERDEKA118: { lat: 3.14265, lng: 101.71072 }, // origin pin
+  DEFAULT_RADIUS: 1500  // default search radius in metres
+};
 ```
 
-## Halal scoring
-The scoring engine in `components.jsx` uses keyword matching on place names, addresses, and types.
-You can extend `window.HALAL_KEYWORDS.likely` / `.check` / `.unlikely` arrays freely.
+To add more halal keywords:
+```js
+window.HALAL_KEYWORDS = {
+  cert:     [...],   // treated as Halal Certified
+  friendly: [...],   // treated as Muslim Friendly
+  unlikely: [...]    // treated as Unverified
+};
+```
+
+---
+
+## Deployment
+
+Hosted on **Netlify**, connected to this GitHub repo.
+
+- Push to `main` → Netlify auto-deploys
+- API key is stored as `MAPS_KEY` in Netlify environment variables
+- `netlify.toml` injects the key into `index.html` at build time
+- The key itself is restricted to this domain in Google Cloud Console
+
+## APIs used
+
+- Google Maps JavaScript API (map display)
+- Google Places API (restaurant search + details + photos)
+- Google Distance Matrix API (travel times)
