@@ -225,8 +225,11 @@ button{font-family:inherit;cursor:pointer;}
 <script>
 window.CONFIG = {
   GOOGLE_API_KEY: "REPLACE_WITH_YOUR_KEY",
-  // Exact coordinates of Menara Warisan Merdeka 118
+  // Building centroid — used for map pin, driving and transit origin
   MERDEKA118: { lat: 3.14265, lng: 101.71072 },
+  // Street-level pedestrian entrance on Jalan Hang Jebat — used for walking distance
+  // Ensures Google routes from the actual exit point, not inside the building podium
+  MERDEKA118_WALK: { lat: 3.14155, lng: 101.71048 },
   DEFAULT_RADIUS: 1500
 };
 
@@ -235,7 +238,7 @@ window.HALAL_KEYWORDS = {
     'halal','muslim','muslimah','nasi','roti canai','mamak','mee goreng',
     'warung','kedai makan','sup kambing','nasi lemak','teh tarik','nasi kandar',
     'nasi padang','nasi campur','rendang','murtabak','briyani','biryani',
-    'malay','melayu','muslim-owned','no pork','pork free','pork-free','fast food'
+    'malay','melayu','muslim-owned','no pork','pork free','pork-free'
   ],
   friendly: [
     'chinese','western','japanese','korean','thai','indian','cafe','kopitiam',
@@ -251,14 +254,13 @@ window.KL_MALLS = [
   'merdeka 118','pavilion','suria klcc','klcc','mid valley','the gardens',
   'nu sentral','lot 10','sungei wang','berjaya times square','imbi plaza',
   'mytown','sunway velocity','avenue k','intermark','quill city','plaza low yat',
-  'fahrenheit','starhill','royal chulan','the weld','publika','bangsar village',
-  'bangsar shopping','1 utama','sunway pyramid','ioi city','paradigm'
+  'fahrenheit','starhill','royal chulan','the weld','publika','lalaport','pudu sentral'
 ];
 
 // All place types to search — run multiple searches to get comprehensive results
 window.SEARCH_TYPES = [
   'restaurant','cafe','bakery','meal_takeaway','meal_delivery',
-  'food','bar','night_club'
+  'food'
 ];
 </script>
 
