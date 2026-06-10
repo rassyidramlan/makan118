@@ -1,6 +1,10 @@
 const { useEffect, useState, useRef, useCallback, useMemo } = React;
 
 // ── Distance Matrix ────────────────────────────────────────────────────────
+// Uses separate origin for walking vs driving/transit.
+// MERDEKA118_WALK is the street-level pedestrian entrance on Jln Hang Jebat.
+// Using the building centroid for walking causes Google to snap to an indoor
+// path, giving incorrectly short distances (e.g. 503m instead of 1.3km).
 
 function fetchTravel(destination) {
   return new Promise(function(resolve) {
@@ -8,21 +12,22 @@ function fetchTravel(destination) {
     var results = {};
     var done    = 0;
     var finish  = function() { if (++done === 3) resolve(results); };
-    [
-      ['walk',    google.maps.TravelMode.WALKING],
-      ['drive',   google.maps.TravelMode.DRIVING],
-      ['transit', google.maps.TravelMode.TRANSIT],
-    ].forEach(function(pair) {
-      var key  = pair[0];
-      var mode = pair[1];
+
+    var modes = [
+      { key:'walk',    mode: google.maps.TravelMode.WALKING,  origin: window.CONFIG.MERDEKA118_WALK },
+      { key:'drive',   mode: google.maps.TravelMode.DRIVING,  origin: window.CONFIG.MERDEKA118 },
+      { key:'transit', mode: google.maps.TravelMode.TRANSIT,  origin: window.CONFIG.MERDEKA118 },
+    ];
+
+    modes.forEach(function(cfg) {
       svc.getDistanceMatrix({
-        origins:      [window.CONFIG.MERDEKA118],
+        origins:      [cfg.origin],
         destinations: [destination],
-        travelMode:   mode,
+        travelMode:   cfg.mode,
       }, function(res, status) {
         if (status === 'OK') {
           var el = res.rows[0] && res.rows[0].elements[0];
-          if (el && el.status === 'OK') results[key] = el;
+          if (el && el.status === 'OK') results[cfg.key] = el;
         }
         finish();
       });
@@ -244,6 +249,7 @@ function App() {
     initGoogleMap();
     serviceRef.current = new google.maps.places.PlacesService(gMap);
     mapReadyRef.current = true;
+    setTravelMap({}); // clear any stale cached travel times
     loadAllPlaces(window.CONFIG.DEFAULT_RADIUS);
   }, []);
 
