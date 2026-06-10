@@ -1,0 +1,3 @@
+[build]
+  command = "sed -i 's/REPLACE_WITH_YOUR_KEY/'\"$MAPS_KEY\"'/g' index.html"
+  publish = "."
