@@ -232,7 +232,7 @@ var HALAL_FILTER_OPTS = [
   { value:'all',      label:'All'             },
   { value:'cert',     label:'Certified'       },
   { value:'friendly', label:'Muslim-friendly' },
-  { value:'unsure',   label:'Unverified'      },
+  { value:'unsure',   label:'Non-Halal'      },
 ];
 
 var SORT_OPTS = [
@@ -598,7 +598,7 @@ function App() {
           <div className="maplegend">
             <div className="maplegend__item"><div className="lg-dot lg-dot--cert"/>Halal</div>
             <div className="maplegend__item"><div className="lg-dot lg-dot--friendly"/>Friendly</div>
-            <div className="maplegend__item"><div className="lg-dot lg-dot--unsure"/>Unverified</div>
+            <div className="maplegend__item"><div className="lg-dot lg-dot--unsure"/>Non-Halal</div>
           </div>
         </div>
 
