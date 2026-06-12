@@ -230,7 +230,7 @@ var TRAVEL_ICONS  = { walk:'🚶', transit:'🚇', drive:'🚗' };
 
 var HALAL_FILTER_OPTS = [
   { value:'all',      label:'All'             },
-  { value:'cert',     label:'Certified'       },
+  { value:'cert',     label:'Halal'       },
   { value:'friendly', label:'Muslim-friendly' },
   { value:'unsure',   label:'Non-Halal'      },
 ];
