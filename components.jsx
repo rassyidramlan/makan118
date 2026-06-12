@@ -123,12 +123,17 @@ const PlaceCard = ({ place, selected, travel, travelMode, onSelect }) => {
           {place.price_level ? <span className="cost">{window.costDots(place.price_level)}</span> : null}
         </div>
         <div className="card__foot">
-          {dur && (
+          {dur ? (
             <span className="meta">
               {modeIcon} <span className="meta__val">{window.fmtDur(dur)}</span>
               {dist ? <span style={{color:'var(--border)'}}> · {window.fmtDist(dist)}</span> : null}
             </span>
-          )}
+          ) : (place._crow != null ? (
+            <span className="meta">
+              📍 <span className="meta__val">{window.fmtDist(place._crow)}</span>
+              <span style={{color:'var(--muted)'}}> away</span>
+            </span>
+          ) : null)}
           <button className="card__dir" onClick={e=>{e.stopPropagation();onSelect(place);}}>
             Details →
           </button>
