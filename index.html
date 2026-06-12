@@ -29,7 +29,9 @@ button{font-family:inherit;cursor:pointer;}
 .app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 .topbar{display:flex;align-items:center;gap:20px;padding:13px 20px;
   background:var(--surface);border-bottom:1px solid var(--border);flex:none;}
-.brand__mark{font-weight:800;font-size:21px;letter-spacing:-.02em;color:var(--text);line-height:1;}
+.brand{border:none;background:transparent;padding:0;text-align:left;cursor:pointer;}
+.brand:hover .brand__mark{color:var(--primary-dk);}
+.brand__mark{font-weight:800;font-size:21px;letter-spacing:-.02em;color:var(--text);line-height:1;transition:.15s;}
 .brand__at{color:var(--primary);}
 .brand__sub{font-size:11px;color:var(--muted);margin-top:1px;}
 .loc{display:flex;align-items:center;gap:10px;padding-left:20px;border-left:1px solid var(--border);}
@@ -50,6 +52,16 @@ button{font-family:inherit;cursor:pointer;}
   padding:6px 13px;border-radius:100px;font-size:12.5px;font-weight:600;transition:.15s;white-space:nowrap;}
 .chip:hover{border-color:var(--primary);color:var(--primary-dk);}
 .chip--on{background:var(--primary);border-color:var(--primary);color:#fff;}
+
+/* cuisine dropdown (mobile) */
+.ctrl--cuisine{display:none;}
+.cuisine-select{appearance:none;-webkit-appearance:none;width:100%;
+  border:1px solid var(--border);border-radius:var(--r-sm);
+  background:var(--surface) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236E7873' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+  color:var(--text);font-family:var(--font-ui);font-size:13.5px;font-weight:600;
+  padding:9px 34px 9px 12px;cursor:pointer;}
+.cuisine-select:focus{outline:none;border-color:var(--primary);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--primary) 20%,transparent);}
 
 .filters__meta{display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap;}
 .ctrl{display:flex;flex-direction:column;gap:5px;}
@@ -201,7 +213,10 @@ button{font-family:inherit;cursor:pointer;}
   .topbar{gap:12px;padding:10px 14px;}
   .brand__sub{display:none;}
   .loc{padding-left:12px;}
+  .loc__name{font-size:12px;}
   .filters{padding:10px 14px 12px;}
+  .filters__row--chips{display:none;}        /* chips off on mobile */
+  .ctrl--cuisine{display:flex;width:100%;}   /* dropdown on instead */
   .ctrl--dist{max-width:none;width:100%;}
   .vtabs{display:flex;}
   .stage{display:block;position:relative;}
