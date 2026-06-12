@@ -6,6 +6,24 @@ const { useEffect, useState, useRef, useCallback, useMemo } = React;
 // Using the building centroid for walking causes Google to snap to an indoor
 // path, giving incorrectly short distances (e.g. 503m instead of 1.3km).
 
+// Straight-line (haversine) distance in metres from the Merdeka 118 walking
+// entrance to a place. Computed once per place at load time and used for
+// STRICT client-side radius filtering — Google Places treats `radius` only
+// as a search *bias*, so results outside the radius always come back and
+// must be filtered out here.
+function crowDistance(loc) {
+  var lat2 = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+  var lng2 = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+  var o = window.CONFIG.MERDEKA118_WALK;
+  var R = 6371000, toRad = Math.PI / 180;
+  var dLat = (lat2 - o.lat) * toRad;
+  var dLng = (lng2 - o.lng) * toRad;
+  var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(o.lat * toRad) * Math.cos(lat2 * toRad) *
+          Math.sin(dLng/2) * Math.sin(dLng/2);
+  return Math.round(2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
 function fetchTravel(destination) {
   return new Promise(function(resolve) {
     var svc     = new google.maps.DistanceMatrixService();
@@ -264,15 +282,42 @@ function App() {
       r,
       function(n){ setLoadCount(n); }
     ).then(function(all) {
+      // Tag every place with its straight-line distance from Merdeka 118
+      all.forEach(function(p) {
+        if (p.geometry && p.geometry.location) p._crow = crowDistance(p.geometry.location);
+      });
       setPlaces(all);
       setLoading(false);
     });
   }, []);
 
-  // Re-search when radius committed
+  // Re-search only when the radius grows (we need new data from Google).
+  // When it shrinks, the strict client-side filter below handles it instantly.
   const handleRadiusCommit = (val) => {
-    setRadius(val);
-    loadAllPlaces(val);
+    if (val > radius) {
+      setRadius(val);
+      loadAllPlaces(val);
+    } else {
+      setRadius(val);
+    }
+  };
+
+  // ── Home / reset ──────────────────────────────────────────────────────
+  const resetAll = () => {
+    setCuisine('All');
+    setHalalFilter('all');
+    setSortBy('rating');
+    setTravelMode('walk');
+    setSelected(null);
+    setDetails(null);
+    setDetailTravel(null);
+    setMobileView('list');
+    setRadiusDisp(window.CONFIG.DEFAULT_RADIUS);
+    if (gMap) { gMap.panTo(window.CONFIG.MERDEKA118); gMap.setZoom(15); }
+    if (radius !== window.CONFIG.DEFAULT_RADIUS) {
+      setRadius(window.CONFIG.DEFAULT_RADIUS);
+      loadAllPlaces(window.CONFIG.DEFAULT_RADIUS);
+    }
   };
 
   // ── Select place ──────────────────────────────────────────────────────
@@ -328,14 +373,20 @@ function App() {
       list = list.filter(function(p){ return window.halalScore(p) === halalFilter; });
     }
 
-    // Travel mode filter — if walk selected, cap at 2km; transit 5km; drive all
-    if (travelMode === 'walk') {
-      list = list.filter(function(p) {
-        var t = travelMap[p.place_id];
-        if (t && t.walk && t.walk.distance) return t.walk.distance.value <= 2000;
-        return true; // include if not yet fetched
-      });
-    }
+    // STRICT distance filter — this is what makes the radius slider honest.
+    // Every place is checked against its straight-line distance from the
+    // Merdeka 118 entrance; anything beyond the slider value is dropped.
+    // For walking, if real walking distance (from Distance Matrix) is known,
+    // it is used instead, and walking is always capped at 2 km.
+    var maxDist = travelMode === 'walk' ? Math.min(radius, 2000) : radius;
+    list = list.filter(function(p) {
+      var t = travelMap[p.place_id];
+      if (travelMode === 'walk' && t && t.walk && t.walk.distance) {
+        return t.walk.distance.value <= maxDist;
+      }
+      if (p._crow != null) return p._crow <= maxDist;
+      return true; // no coordinates — keep rather than silently hide
+    });
 
     // Sort
     list.sort(function(a, b) {
@@ -349,7 +400,7 @@ function App() {
     });
 
     return list;
-  }, [places, cuisine, halalFilter, travelMode, sortBy, travelMap]);
+  }, [places, cuisine, halalFilter, travelMode, sortBy, travelMap, radius]);
 
   // ── Update markers ────────────────────────────────────────────────────
   useEffect(() => {
@@ -365,16 +416,13 @@ function App() {
 
       {/* Topbar */}
       <div className="topbar">
-        <div className="brand">
+        <button className="brand" onClick={resetAll} title="Reset Makan@118">
           <div className="brand__mark">Makan<span className="brand__at">@118</span></div>
           <div className="brand__sub">Halal makan near Merdeka 118</div>
-        </div>
+        </button>
         <div className="loc">
           <div className="loc__dot"/>
-          <div>
-            <div className="loc__label">Your location</div>
-            <div className="loc__name">Menara Merdeka 118</div>
-          </div>
+          <div className="loc__name">Makan Places Around Merdeka 118</div>
         </div>
         <div className="topbar__spacer"/>
         <div className="count-pill">
@@ -384,8 +432,8 @@ function App() {
 
       {/* Filters */}
       <div className="filters">
-        {/* Cuisine chips */}
-        <div className="filters__row">
+        {/* Cuisine chips — desktop only (hidden on mobile via CSS) */}
+        <div className="filters__row filters__row--chips">
           {CUISINE_CHIPS.map(function(c) {
             return (
               <button key={c} className={`chip${cuisine===c?' chip--on':''}`} onClick={() => setCuisine(c)}>
@@ -397,6 +445,16 @@ function App() {
 
         {/* Controls row */}
         <div className="filters__meta">
+
+          {/* Cuisine dropdown — mobile only (hidden on desktop via CSS) */}
+          <div className="ctrl ctrl--cuisine">
+            <div className="ctrl__label">Type of food</div>
+            <select className="cuisine-select" value={cuisine} onChange={e => setCuisine(e.target.value)}>
+              {CUISINE_CHIPS.map(function(c) {
+                return <option key={c} value={c}>{c === 'All' ? 'All food types' : c}</option>;
+              })}
+            </select>
+          </div>
 
           {/* Getting there */}
           <div className="ctrl">
