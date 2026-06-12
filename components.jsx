@@ -69,7 +69,7 @@ const HalalBadge = ({ score }) => {
   const cfg = {
     cert:     { cls:'halal--cert',     label:'Halal' },
     friendly: { cls:'halal--friendly', label:'Muslim Friendly' },
-    unsure:   { cls:'halal--unsure',   label:'Unverified' },
+    unsure:   { cls:'halal--unsure',   label:'Non-Halal' },
   }[score] || { cls:'halal--cert', label:'Halal' };
   return (
     <span className={`halal ${cfg.cls}`}>
