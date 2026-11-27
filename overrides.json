@@ -1,0 +1,5 @@
+{
+  "_how_to_use": "Key = place_id from places.json or jakim-checklist.csv. halal: 'cert' (found on JAKIM portal), 'friendly' or 'unsure' (not listed). Delete the _example entries when you add real ones. Keys starting with _ are ignored.",
+  "_example_verified": { "halal": "cert", "checked": "2026-11-26", "note": "JAKIM portal" },
+  "_example_added_by_hand": { "name": "Example Warung", "lat": 3.1405, "lng": 101.6998, "vicinity": "Jalan Hang Jebat", "types": ["restaurant", "malaysian"], "halal": "cert", "checked": "2026-11-26", "note": "JAKIM portal" }
+}

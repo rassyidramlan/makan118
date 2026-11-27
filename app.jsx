@@ -1,608 +1,447 @@
 const { useEffect, useState, useRef, useCallback, useMemo } = React;
 
-// ── Distance Matrix ────────────────────────────────────────────────────────
-// Uses separate origin for walking vs driving/transit.
-// MERDEKA118_WALK is the street-level pedestrian entrance on Jln Hang Jebat.
-// Using the building centroid for walking causes Google to snap to an indoor
-// path, giving incorrectly short distances (e.g. 503m instead of 1.3km).
+// ── Map (MapLibre GL + OpenFreeMap, no key) ────────────────────────────────
+// MapLibre uses [lng, lat] order — the reverse of Google's {lat, lng}.
 
-// Straight-line (haversine) distance in metres from the Merdeka 118 walking
-// entrance to a place. Computed once per place at load time and used for
-// STRICT client-side radius filtering — Google Places treats `radius` only
-// as a search *bias*, so results outside the radius always come back and
-// must be filtered out here.
-function crowDistance(loc) {
-  var lat2 = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
-  var lng2 = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
-  var o = window.CONFIG.MERDEKA118_WALK;
-  var R = 6371000, toRad = Math.PI / 180;
-  var dLat = (lat2 - o.lat) * toRad;
-  var dLng = (lng2 - o.lng) * toRad;
-  var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-          Math.cos(o.lat * toRad) * Math.cos(lat2 * toRad) *
-          Math.sin(dLng/2) * Math.sin(dLng/2);
-  return Math.round(2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-}
+var mlMap      = null;
+var mlPopup    = null;
+var mapReady   = null;   // Promise resolved once the places layers exist
+var onMapPick  = function(){};  // replaced by the App on every render
 
-function fetchTravel(destination) {
-  return new Promise(function(resolve) {
-    var svc     = new google.maps.DistanceMatrixService();
-    var results = {};
-    var done    = 0;
-    var finish  = function() { if (++done === 3) resolve(results); };
+var EMPTY_FC = { type:'FeatureCollection', features:[] };
 
-    var modes = [
-      { key:'walk',    mode: google.maps.TravelMode.WALKING,  origin: window.CONFIG.MERDEKA118_WALK },
-      { key:'drive',   mode: google.maps.TravelMode.DRIVING,  origin: window.CONFIG.MERDEKA118 },
-      { key:'transit', mode: google.maps.TravelMode.TRANSIT,  origin: window.CONFIG.MERDEKA118 },
-    ];
+function lngLat(p) { return [p.lng, p.lat]; }
 
-    modes.forEach(function(cfg) {
-      svc.getDistanceMatrix({
-        origins:      [cfg.origin],
-        destinations: [destination],
-        travelMode:   cfg.mode,
-      }, function(res, status) {
-        if (status === 'OK') {
-          var el = res.rows[0] && res.rows[0].elements[0];
-          if (el && el.status === 'OK') results[cfg.key] = el;
-        }
-        finish();
-      });
-    });
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
   });
 }
 
-// ── Google Maps ────────────────────────────────────────────────────────────
-
-var gMap        = null;
-var gMarkers    = [];
-var gInfoWindow = null;
-
-var MAP_STYLES = [
-  { featureType:'poi',              stylers:[{visibility:'off'}] },
-  { featureType:'poi.park',         stylers:[{visibility:'simplified'}] },
-  { featureType:'transit.station',  stylers:[{visibility:'simplified'}] },
-  { featureType:'road',             elementType:'geometry', stylers:[{color:'#f0f0eb'}] },
-  { featureType:'road.arterial',    elementType:'geometry', stylers:[{color:'#e8e8e0'}] },
-  { featureType:'road.highway',     elementType:'geometry', stylers:[{color:'#ddddd5'}] },
-  { featureType:'water',            elementType:'geometry', stylers:[{color:'#c5dfe0'}] },
-  { featureType:'landscape',        elementType:'geometry', stylers:[{color:'#f5f5f0'}] },
-  { elementType:'labels.text.fill', stylers:[{color:'#6E7873'}] },
-];
-
-function initGoogleMap() {
-  gMap = new google.maps.Map(document.getElementById('map'), {
-    center:            window.CONFIG.MERDEKA118,
-    zoom:              15,
-    mapTypeControl:    false,
-    streetViewControl: true,
-    fullscreenControl: false,
-    styles:            MAP_STYLES,
+function initMap() {
+  var C = window.CONFIG;
+  mlMap = new maplibregl.Map({
+    container: 'map',
+    style:     C.MAP_STYLE,
+    center:    lngLat(C.MERDEKA118),
+    zoom:      15,
   });
-  gInfoWindow = new google.maps.InfoWindow();
+  mlMap.addControl(new maplibregl.NavigationControl({ showCompass:false }), 'top-right');
+  mlPopup = new maplibregl.Popup({ offset:10, closeButton:false, maxWidth:'220px' });
 
   // Merdeka 118 pin
-  new google.maps.Marker({
-    map:      gMap,
-    position: window.CONFIG.MERDEKA118,
-    title:    'Menara Merdeka 118',
-    icon: {
-      path:         google.maps.SymbolPath.CIRCLE,
-      scale:        13,
-      fillColor:    '#1C2420',
-      fillOpacity:  1,
-      strokeColor:  '#ffffff',
-      strokeWeight: 3,
-    },
-    zIndex: 999,
-    label: { text:'118', color:'#ffffff', fontSize:'9px', fontWeight:'700' },
-  });
-}
+  var el = document.createElement('div');
+  el.className = 'm118-pin';
+  el.textContent = '118';
+  el.title = 'Menara Merdeka 118';
+  new maplibregl.Marker({ element: el }).setLngLat(lngLat(C.MERDEKA118)).addTo(mlMap);
 
-function updateMarkers(places, selectedId, onSelect) {
-  gMarkers.forEach(function(m){ m.setMap(null); });
-  gMarkers = [];
-  places.forEach(function(p) {
-    var score      = window.halalScore(p);
-    var isSelected = p.place_id === selectedId;
-    var fillColor  = isSelected ? '#E0892F'
-      : score === 'cert'     ? '#2E7D5B'
-      : score === 'friendly' ? '#E0892F'
-      : '#C0504D';
+  mapReady = new Promise(function(resolve) {
+    mlMap.on('load', function() {
+      mlMap.addSource('places', { type:'geojson', data: EMPTY_FC });
 
-    var marker = new google.maps.Marker({
-      map:      gMap,
-      position: p.geometry.location,
-      title:    p.name,
-      icon: {
-        path:         google.maps.SymbolPath.CIRCLE,
-        scale:        isSelected ? 11 : 7,
-        fillColor:    fillColor,
-        fillOpacity:  1,
-        strokeColor:  '#ffffff',
-        strokeWeight: isSelected ? 2.5 : 1.5,
-      },
-      zIndex: isSelected ? 100 : 1,
-    });
-    marker.addListener('click', function() {
-      gInfoWindow.setContent(
-        '<div style="font-family:\'Plus Jakarta Sans\',sans-serif;padding:3px 2px;max-width:200px;">' +
-        '<strong style="font-size:13px;">' + p.name + '</strong><br>' +
-        '<span style="font-size:11px;color:#6E7873;">' + (p.vicinity||'') + '</span>' +
-        (p.rating ? '<br><span style="font-size:11px;">⭐ ' + p.rating + '</span>' : '') +
-        '</div>'
-      );
-      gInfoWindow.open(gMap, marker);
-      onSelect(p);
-    });
-    gMarkers.push(marker);
-  });
-}
-
-// ── Multi-search to maximise results ──────────────────────────────────────
-// Google Places nearbySearch returns max 60 results (3 pages of 20).
-// We run multiple keyword searches and merge to get comprehensive coverage.
-
-var KEYWORD_SEARCHES = [
-  'restaurant', 'cafe', 'kopitiam', 'mamak', 'food court',
-  'bakery', 'nasi lemak', 'mee', 'western food', 'japanese food',
-  'korean food', 'indian food', 'fast food', 'chinese restaurant', 'halal'
-];
-
-function runPagedSearch(service, request, allResults, resolve) {
-  service.nearbySearch(request, function(results, status, pagination) {
-    if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-      results.forEach(function(r) {
-        if (!allResults.find(function(e){ return e.place_id === r.place_id; })) {
-          allResults.push(r);
-        }
+      mlMap.addLayer({
+        id: 'places-dots', type: 'circle', source: 'places',
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 4, 16, 7, 18, 9],
+          'circle-color': ['match', ['get', 'score'],
+            'cert', '#2E7D5B', 'friendly', '#E0892F', '#C0504D'],
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 1.5,
+        },
       });
-    }
-    // Fetch next page if available (up to 3 pages = 60 results per keyword)
-    if (pagination && pagination.hasNextPage) {
-      setTimeout(function(){ pagination.nextPage(); }, 300);
+
+      mlMap.addLayer({
+        id: 'places-selected', type: 'circle', source: 'places',
+        filter: ['==', ['get', 'id'], ''],
+        paint: {
+          'circle-radius': 11,
+          'circle-color': '#E0892F',
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2.5,
+        },
+      });
+
+      mlMap.on('click', 'places-dots', function(e) {
+        var f = e.features && e.features[0];
+        if (f) onMapPick(f.properties.id);
+      });
+      mlMap.on('mouseenter', 'places-dots', function(){ mlMap.getCanvas().style.cursor = 'pointer'; });
+      mlMap.on('mouseleave', 'places-dots', function(){ mlMap.getCanvas().style.cursor = ''; });
+
+      resolve();
+    });
+  });
+}
+
+function setMapPlaces(places) {
+  if (!mapReady) return;
+  mapReady.then(function() {
+    mlMap.getSource('places').setData({
+      type: 'FeatureCollection',
+      features: places.map(function(p) {
+        return {
+          type: 'Feature',
+          geometry: { type:'Point', coordinates: lngLat(p) },
+          properties: { id: p.place_id, score: window.halalScore(p) },
+        };
+      }),
+    });
+  });
+}
+
+function setMapSelected(place) {
+  if (!mapReady) return;
+  mapReady.then(function() {
+    mlMap.setFilter('places-selected', ['==', ['get', 'id'], place ? place.place_id : '']);
+    if (place) {
+      mlMap.flyTo({ center: lngLat(place), zoom: 17, speed: 1.4 });
+      mlPopup.setLngLat(lngLat(place))
+        .setHTML('<strong style="font-size:13px">' + escapeHtml(place.name) + '</strong>' +
+                 (place.vicinity ? '<br><span style="font-size:11px;color:#6E7873">' +
+                  escapeHtml(place.vicinity) + '</span>' : ''))
+        .addTo(mlMap);
     } else {
-      resolve(allResults);
+      mlPopup.remove();
     }
   });
 }
 
-function searchAllKeywords(service, radius, onProgress) {
-  var allPlaces = [];
-  var remaining = KEYWORD_SEARCHES.length;
-
-  return new Promise(function(resolve) {
-    if (remaining === 0) { resolve([]); return; }
-
-    KEYWORD_SEARCHES.forEach(function(keyword) {
-      var localResults = [];
-      var request = {
-        location: window.CONFIG.MERDEKA118,
-        radius:   radius,
-        keyword:  keyword,
-        type:     'food',
-      };
-      runPagedSearch(service, request, localResults, function(kResults) {
-        kResults.forEach(function(r) {
-          if (!allPlaces.find(function(e){ return e.place_id === r.place_id; })) {
-            allPlaces.push(r);
-          }
-        });
-        remaining--;
-        if (onProgress) onProgress(allPlaces.length);
-        if (remaining === 0) resolve(allPlaces);
-      });
-    });
-  });
+function resetMapView() {
+  if (!mlMap) return;
+  mlPopup && mlPopup.remove();
+  mlMap.flyTo({ center: lngLat(window.CONFIG.MERDEKA118), zoom: 15 });
 }
 
 // ── Filter constants ───────────────────────────────────────────────────────
 
 var CUISINE_CHIPS = [
-  'All',
-  'Malay / Nasi',
-  'Mamak / Nasi Kandar',
-  'Indian',
-  'Chinese (halal)',
-  'Western',
-  'Middle Eastern',
-  'Japanese / Korean',
-  'Cafe / Brunch',
-  'Quick bites',
+  'All', 'Malay / Nasi', 'Mamak / Nasi Kandar', 'Indian', 'Chinese',
+  'Western', 'Middle Eastern', 'Japanese / Korean', 'Cafe / Brunch', 'Quick bites',
 ];
 
+// Matched against name, address and OpenStreetMap cuisine tags
 var CUISINE_KEYWORDS = {
-  'Malay / Nasi':        ['nasi','malay','melayu','rendang','lemak','padang','campur'],
+  'Malay / Nasi':        ['nasi','malay','melayu','malaysian','rendang','lemak','padang','campur','warung','indonesian','ayam penyet'],
   'Mamak / Nasi Kandar': ['mamak','kandar','roti canai','teh tarik','murtabak'],
-  'Indian':              ['indian','briyani','biryani','tandoor','curry','dosai','chapati'],
-  'Chinese (halal)':     ['chinese','dim sum','wonton','chow','fried rice'],
-  'Western':             ['western','burger','steak','pasta','pizza','sandwich'],
-  'Middle Eastern':      ['arabic','middle east','kebab','shawarma','turkish','lebanese'],
-  'Japanese / Korean':   ['japanese','korean','sushi','ramen','bento','bbq','bulgogi'],
-  'Cafe / Brunch':       ['cafe','coffee','brunch','bakery','pastry','waffle','toast'],
-  'Quick bites':         ['fast food','takeaway','snack','kiosk','chicken rice','economy'],
+  'Indian':              ['indian','briyani','biryani','tandoor','curry','dosai','thosai','chapati','banana leaf'],
+  'Chinese':     ['chinese','dim sum','wonton','chow','fried rice','noodle','cantonese'],
+  'Western':             ['western','burger','steak','pasta','pizza','sandwich','american','italian','grill'],
+  'Middle Eastern':      ['arab','arabic','middle_eastern','kebab','shawarma','turkish','lebanese','yemeni','persian'],
+  'Japanese / Korean':   ['japanese','korean','sushi','ramen','bento','bulgogi'],
+  'Cafe / Brunch':       ['cafe','coffee','coffee_shop','brunch','bakery','pastry','cake','waffle','toast','tea'],
+  'Quick bites':         ['fast_food','fast food','takeaway','snack','kiosk','chicken','food_court','food court','economy'],
 };
 
-var TRAVEL_MODES = ['walk','transit','drive'];
+var TRAVEL_MODES  = ['walk','transit','drive'];
 var TRAVEL_LABELS = { walk:'Walk', transit:'Transit', drive:'Drive' };
 var TRAVEL_ICONS  = { walk:'🚶', transit:'🚇', drive:'🚗' };
 
 var HALAL_FILTER_OPTS = [
   { value:'all',      label:'All'             },
-  { value:'cert',     label:'Halal'       },
+  { value:'cert',     label:'Halal'           },
   { value:'friendly', label:'Muslim-friendly' },
-  { value:'unsure',   label:'Non-Halal'      },
+  { value:'unsure',   label:'Unverified'      },
 ];
 
 var SORT_OPTS = [
-  { value:'rating',  label:'Top rated'    },
-  { value:'reviews', label:'Most reviews' },
-  { value:'halal',   label:'Halal first'  },
+  { value:'near',  label:'Nearest'     },
+  { value:'halal', label:'Halal first' },
+  { value:'name',  label:'A–Z'         },
 ];
+
+// Whole-word matchers ("tea" must not match "steak")
+var CUISINE_MATCHERS = {};
+Object.keys(CUISINE_KEYWORDS).forEach(function(k){ CUISINE_MATCHERS[k] = buildMatcher(CUISINE_KEYWORDS[k]); });
+
+function matchesCuisine(place, chip) {
+  if (chip === 'All') return true;
+  var m = CUISINE_MATCHERS[chip];
+  return m ? m(window.haystack(place)) : true;
+}
+
+// ── "Missing a place?" ─────────────────────────────────────────────────────
+// Points people to OpenStreetMap, where new places get added. They appear on
+// Makan@118 after the next data refresh (node scripts/build-places.mjs).
+
+function MissingPlace() {
+  var C = window.CONFIG;
+  var editUrl = 'https://www.openstreetmap.org/edit#map=19/' +
+    C.MERDEKA118.lat.toFixed(5) + '/' + C.MERDEKA118.lng.toFixed(5);
+  return (
+    <div className="missing">
+      <div className="missing__h">Missing a place?</div>
+      <p className="missing__p">
+        Makan@118 lists eateries from OpenStreetMap, the free map anyone can edit.
+        Add a missing restaurant there and it shows up here after the next monthly refresh.
+      </p>
+      <div className="missing__links">
+        <a className="btn btn--ghost" href="https://every-door.app" target="_blank" rel="noopener">
+          On your phone: Every Door app ↗
+        </a>
+        <a className="btn btn--ghost" href={editUrl} target="_blank" rel="noopener">
+          On a laptop: edit the map ↗
+        </a>
+        {C.REPORT_URL && (
+          <a className="btn btn--ghost" href={C.REPORT_URL} target="_blank" rel="noopener">
+            Or just tell us ↗
+          </a>
+        )}
+      </div>
+      <p className="missing__tip">
+        Tips: use the name on the shopfront, set the floor level for places inside 118 Mall,
+        and add “halal only” only if a JAKIM certificate is displayed. Please don’t copy from Google Maps.
+      </p>
+    </div>
+  );
+}
+
+// Pop-up version of the same content, opened from the "+" in the top bar
+function AddPlaceModal({ onClose }) {
+  useEffect(() => {
+    var onKey = function(e){ if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="modal" onClick={onClose}>
+      <div className="modal__box" role="dialog" aria-modal="true" aria-label="Add a missing place"
+        onClick={e => e.stopPropagation()}>
+        <button className="modal__close" onClick={onClose} aria-label="Close">✕</button>
+        <MissingPlace/>
+      </div>
+    </div>
+  );
+}
 
 // ── App ────────────────────────────────────────────────────────────────────
 
 function App() {
-  const [places,       setPlaces]       = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [loadCount,    setLoadCount]    = useState(0);
-  const [cuisine,      setCuisine]      = useState('All');
-  const [travelMode,   setTravelMode]   = useState('walk');
-  const [halalFilter,  setHalalFilter]  = useState('all');
-  const [sortBy,       setSortBy]       = useState('rating');
-  const [radius,       setRadius]       = useState(window.CONFIG.DEFAULT_RADIUS);
-  const [radiusDisp,   setRadiusDisp]   = useState(window.CONFIG.DEFAULT_RADIUS);
-  const [selected,     setSelected]     = useState(null);
-  const [details,      setDetails]      = useState(null);
-  const [travelMap,    setTravelMap]    = useState({});
-  const [detailTravel, setDetailTravel] = useState(null);
-  const [mobileView,   setMobileView]   = useState('list');
+  const C = window.CONFIG;
+  const [data,        setData]        = useState(null);
+  const [error,       setError]       = useState(null);
+  const [cuisine,     setCuisine]     = useState('All');
+  const [travelMode,  setTravelMode]  = useState('walk');
+  const [halalFilter, setHalalFilter] = useState('all');
+  const [sortBy,      setSortBy]      = useState('near');
+  const [radius,      setRadius]      = useState(C.DEFAULT_RADIUS);
+  const [selected,    setSelected]    = useState(null);
+  const [mobileView,  setMobileView]  = useState('list');
+  const [showAdd,     setShowAdd]     = useState(false);
+  const panelRef = useRef(null);
 
-  const serviceRef  = useRef(null);
-  const mapReadyRef = useRef(false);
+  const places  = data ? data.places : [];
+  const maxRad  = data ? data.radius : 3000;
 
-  // ── Init ─────────────────────────────────────────────────────────────
+  // ── Init: map + data (one static file, no API calls) ─────────────────
   useEffect(() => {
-    initGoogleMap();
-    serviceRef.current = new google.maps.places.PlacesService(gMap);
-    mapReadyRef.current = true;
-    setTravelMap({}); // clear any stale cached travel times
-    loadAllPlaces(window.CONFIG.DEFAULT_RADIUS);
+    initMap();
+    fetch('places.json', { cache: 'no-cache' })
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(setData)
+      .catch(e => setError(e.message));
   }, []);
 
-  // ── Load all places via multi-keyword search ──────────────────────────
-  const loadAllPlaces = useCallback((r) => {
-    setLoading(true);
-    setLoadCount(0);
-    setSelected(null);
-    setDetails(null);
-    searchAllKeywords(
-      serviceRef.current,
-      r,
-      function(n){ setLoadCount(n); }
-    ).then(function(all) {
-      // Tag every place with its straight-line distance from Merdeka 118
-      all.forEach(function(p) {
-        if (p.geometry && p.geometry.location) p._crow = crowDistance(p.geometry.location);
-      });
-      setPlaces(all);
-      setLoading(false);
-    });
-  }, []);
+  // MapLibre needs a resize when the map tab becomes visible on mobile
+  useEffect(() => { if (mlMap) setTimeout(() => mlMap.resize(), 0); }, [mobileView]);
 
-  // Re-search only when the radius grows (we need new data from Google).
-  // When it shrinks, the strict client-side filter below handles it instantly.
-  const handleRadiusCommit = (val) => {
-    if (val > radius) {
-      setRadius(val);
-      loadAllPlaces(val);
-    } else {
-      setRadius(val);
-    }
-  };
-
-  // ── Home / reset ──────────────────────────────────────────────────────
-  const resetAll = () => {
-    setCuisine('All');
-    setHalalFilter('all');
-    setSortBy('rating');
-    setTravelMode('walk');
-    setSelected(null);
-    setDetails(null);
-    setDetailTravel(null);
-    setMobileView('list');
-    setRadiusDisp(window.CONFIG.DEFAULT_RADIUS);
-    if (gMap) { gMap.panTo(window.CONFIG.MERDEKA118); gMap.setZoom(15); }
-    if (radius !== window.CONFIG.DEFAULT_RADIUS) {
-      setRadius(window.CONFIG.DEFAULT_RADIUS);
-      loadAllPlaces(window.CONFIG.DEFAULT_RADIUS);
-    }
-  };
-
-  // ── Select place ──────────────────────────────────────────────────────
   const handleSelect = useCallback((place) => {
     setSelected(place);
-    setDetails(null);
-    setDetailTravel(null);
-    setMobileView('list');
+    if (panelRef.current) panelRef.current.scrollTop = 0;
+  }, []);
 
-    if (gMap) {
-      gMap.panTo(place.geometry.location);
-      gMap.setZoom(17);
-    }
+  // Map dot clicks → select that place and show its details
+  onMapPick = function(id) {
+    var p = places.find(function(x){ return x.place_id === id; });
+    if (p) { handleSelect(p); setMobileView('list'); }
+  };
 
-    serviceRef.current.getDetails({
-      placeId: place.place_id,
-      fields: ['name','formatted_address','formatted_phone_number','website',
-               'opening_hours','photos','price_level','rating','user_ratings_total'],
-    }, function(res, status) {
-      if (status === google.maps.places.PlacesServiceStatus.OK) setDetails(res);
-    });
+  useEffect(() => { setMapSelected(selected); }, [selected]);
 
-    if (travelMap[place.place_id]) {
-      setDetailTravel(travelMap[place.place_id]);
-    } else {
-      fetchTravel(place.geometry.location).then(function(t) {
-        setDetailTravel(t);
-        setTravelMap(function(prev) {
-          var next = Object.assign({}, prev);
-          next[place.place_id] = t;
-          return next;
-        });
-      });
-    }
-  }, [travelMap]);
+  const resetAll = () => {
+    setCuisine('All'); setHalalFilter('all'); setSortBy('near');
+    setTravelMode('walk'); setRadius(C.DEFAULT_RADIUS);
+    setSelected(null); setMobileView('list');
+    resetMapView();
+  };
 
   // ── Derived filtered + sorted list ────────────────────────────────────
   const displayPlaces = useMemo(() => {
-    var list = places.slice();
-
-    // Cuisine filter
-    if (cuisine !== 'All') {
-      var kws = CUISINE_KEYWORDS[cuisine] || [];
-      list = list.filter(function(p) {
-        var hay = ((p.name||'') + ' ' + (p.vicinity||'') + ' ' +
-                   (Array.isArray(p.types)?p.types.join(' '):'')).toLowerCase();
-        return kws.some(function(k){ return hay.indexOf(k) > -1; });
-      });
-    }
-
-    // Halal filter
-    if (halalFilter !== 'all') {
-      list = list.filter(function(p){ return window.halalScore(p) === halalFilter; });
-    }
-
-    // STRICT distance filter — this is what makes the radius slider honest.
-    // Every place is checked against its straight-line distance from the
-    // Merdeka 118 entrance; anything beyond the slider value is dropped.
-    // For walking, if real walking distance (from Distance Matrix) is known,
-    // it is used instead, and walking is always capped at 2 km.
-    var maxDist = travelMode === 'walk' ? Math.min(radius, 2000) : radius;
-    list = list.filter(function(p) {
-      var t = travelMap[p.place_id];
-      if (travelMode === 'walk' && t && t.walk && t.walk.distance) {
-        return t.walk.distance.value <= maxDist;
-      }
-      if (p._crow != null) return p._crow <= maxDist;
-      return true; // no coordinates — keep rather than silently hide
+    var maxDist = travelMode === 'walk' ? Math.min(radius, C.WALK_CAP) : radius;
+    var list = places.filter(function(p) {
+      if (p._crow > maxDist) return false;
+      if (!matchesCuisine(p, cuisine)) return false;
+      if (halalFilter !== 'all' && window.halalScore(p) !== halalFilter) return false;
+      return true;
     });
-
-    // Sort
+    var rank = { cert:0, friendly:1, unsure:2 };
     list.sort(function(a, b) {
-      if (sortBy === 'rating')  return (b.rating||0) - (a.rating||0);
-      if (sortBy === 'reviews') return (b.user_ratings_total||0) - (a.user_ratings_total||0);
       if (sortBy === 'halal') {
-        var r = {cert:0,friendly:1,unsure:2};
-        return r[window.halalScore(a)] - r[window.halalScore(b)];
+        var d = rank[window.halalScore(a)] - rank[window.halalScore(b)];
+        return d !== 0 ? d : a._crow - b._crow;
       }
-      return 0;
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      return a._crow - b._crow;
     });
-
     return list;
-  }, [places, cuisine, halalFilter, travelMode, sortBy, travelMap, radius]);
+  }, [places, cuisine, halalFilter, travelMode, sortBy, radius]);
 
-  // ── Update markers ────────────────────────────────────────────────────
-  useEffect(() => {
-    if (mapReadyRef.current) updateMarkers(displayPlaces, selected && selected.place_id, handleSelect);
-  }, [displayPlaces, selected, handleSelect]);
+  useEffect(() => { setMapPlaces(displayPlaces); }, [displayPlaces]);
 
-  const radiusLabel = radiusDisp >= 1000 ? (radiusDisp/1000).toFixed(1)+' km' : radiusDisp+' m';
-  const sortLabel   = (SORT_OPTS.find(function(o){return o.value===sortBy;})||{}).label;
+  const effRadius   = travelMode === 'walk' ? Math.min(radius, C.WALK_CAP) : radius;
+  const radiusLabel = effRadius >= 1000 ? (effRadius/1000).toFixed(1) + ' km' : effRadius + ' m';
+  const sortLabel   = (SORT_OPTS.find(o => o.value === sortBy) || {}).label;
+  const loading     = !data && !error;
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className={`app view-${mobileView}`}>
 
-      {/* Topbar */}
       <div className="topbar">
         <button className="brand" onClick={resetAll} title="Reset Makan@118">
           <div className="brand__mark">Makan<span className="brand__at">@118</span></div>
-          <div className="brand__sub">Halal makan near Merdeka 118</div>
         </button>
         <div className="loc">
           <div className="loc__dot"/>
-          <div className="loc__name">Makan Places Around Merdeka 118</div>
+          <div className="loc__name">Makan places around Merdeka 118</div>
         </div>
         <div className="topbar__spacer"/>
-        <div className="count-pill">
-          {loading ? (loadCount > 0 ? loadCount + '+ found…' : 'searching…') : displayPlaces.length + ' places'}
-        </div>
+        <div className="count-pill">{loading ? 'loading…' : displayPlaces.length + ' places'}</div>
+        <button className="add-btn" onClick={() => setShowAdd(true)}
+          title="Missing a place? Add it" aria-label="Add a missing place">+</button>
       </div>
 
-      {/* Filters */}
       <div className="filters">
-        {/* Cuisine chips — desktop only (hidden on mobile via CSS) */}
         <div className="filters__row filters__row--chips">
-          {CUISINE_CHIPS.map(function(c) {
-            return (
-              <button key={c} className={`chip${cuisine===c?' chip--on':''}`} onClick={() => setCuisine(c)}>
-                {c}
-              </button>
-            );
-          })}
+          {CUISINE_CHIPS.map(c => (
+            <button key={c} className={`chip${cuisine === c ? ' chip--on' : ''}`} onClick={() => setCuisine(c)}>{c}</button>
+          ))}
         </div>
 
-        {/* Controls row */}
         <div className="filters__meta">
-
-          {/* Cuisine dropdown — mobile only (hidden on desktop via CSS) */}
           <div className="ctrl ctrl--cuisine">
             <div className="ctrl__label">Type of food</div>
             <select className="cuisine-select" value={cuisine} onChange={e => setCuisine(e.target.value)}>
-              {CUISINE_CHIPS.map(function(c) {
-                return <option key={c} value={c}>{c === 'All' ? 'All food types' : c}</option>;
-              })}
+              {CUISINE_CHIPS.map(c => <option key={c} value={c}>{c === 'All' ? 'All food types' : c}</option>)}
             </select>
           </div>
 
-          {/* Getting there */}
           <div className="ctrl">
             <div className="ctrl__label">Getting there</div>
             <div className="seg">
-              {TRAVEL_MODES.map(function(m) {
-                return (
-                  <button key={m} className={`seg__btn${travelMode===m?' seg__btn--on':''}`}
-                    onClick={() => setTravelMode(m)}>
-                    {TRAVEL_ICONS[m]} {TRAVEL_LABELS[m]}
-                  </button>
-                );
-              })}
+              {TRAVEL_MODES.map(m => (
+                <button key={m} className={`seg__btn${travelMode === m ? ' seg__btn--on' : ''}`}
+                  onClick={() => setTravelMode(m)}>
+                  {TRAVEL_ICONS[m]} {TRAVEL_LABELS[m]}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Halal status */}
           <div className="ctrl">
             <div className="ctrl__label">Halal status</div>
             <div className="seg">
-              {HALAL_FILTER_OPTS.map(function(o) {
-                return (
-                  <button key={o.value} className={`seg__btn${halalFilter===o.value?' seg__btn--on':''}`}
-                    onClick={() => setHalalFilter(o.value)}>
-                    {o.label}
-                  </button>
-                );
-              })}
+              {HALAL_FILTER_OPTS.map(o => (
+                <button key={o.value} className={`seg__btn${halalFilter === o.value ? ' seg__btn--on' : ''}`}
+                  onClick={() => setHalalFilter(o.value)}>
+                  {o.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Radius */}
           <div className="ctrl ctrl--dist">
-            <div className="ctrl__label">Within <strong>{radiusLabel}</strong></div>
-            <input className="range" type="range" min="500" max="10000" step="500"
-              value={radiusDisp}
-              onChange={e => setRadiusDisp(Number(e.target.value))}
-              onMouseUp={e  => handleRadiusCommit(Number(e.target.value))}
-              onTouchEnd={e => handleRadiusCommit(Number(e.target.value))}
-            />
+            <div className="ctrl__label">
+              Within <strong>{radiusLabel}</strong>
+              {travelMode === 'walk' ? ' walking' : ''}
+            </div>
+            <input className="range" type="range" min="500" step="250"
+              max={travelMode === 'walk' ? Math.min(maxRad, C.WALK_CAP) : maxRad}
+              value={effRadius} aria-label="Search radius"
+              onChange={e => setRadius(Number(e.target.value))}/>
           </div>
-
         </div>
       </div>
 
-      {/* Mobile tabs */}
       <div className="vtabs">
-        <button className={`vtab${mobileView==='list'?' vtab--on':''}`} onClick={() => setMobileView('list')}>🍽 List</button>
-        <button className={`vtab${mobileView==='map'?' vtab--on':''}`}  onClick={() => setMobileView('map')}>🗺 Map</button>
+        <button className={`vtab${mobileView === 'list' ? ' vtab--on' : ''}`} onClick={() => setMobileView('list')}>🍽 List</button>
+        <button className={`vtab${mobileView === 'map' ? ' vtab--on' : ''}`} onClick={() => setMobileView('map')}>🗺 Map</button>
       </div>
 
-      {/* Stage */}
       <div className="stage">
-
-        {/* Panel */}
-        <div className="panel">
+        <div className="panel" ref={panelRef}>
           {selected ? (
-            <DetailPanel
-              place={selected}
-              details={details}
-              travel={detailTravel}
-              onClose={() => {
-                setSelected(null);
-                setDetails(null);
-                if (gMap) { gMap.panTo(window.CONFIG.MERDEKA118); gMap.setZoom(15); }
-              }}
-            />
+            <DetailPanel place={selected} onClose={() => { setSelected(null); resetMapView(); }}/>
           ) : (
             <div className="list">
               <div className="listhead">
                 <span className="listhead__count">
-                  {loading
-                    ? (loadCount > 0 ? 'Found ' + loadCount + ' so far…' : 'Searching all restaurants…')
-                    : displayPlaces.length + ' places found'}
+                  {loading ? 'Loading places…' : error ? 'Could not load places' : displayPlaces.length + ' places found'}
                 </span>
                 <span className="listhead__sort">↕ {sortLabel}</span>
               </div>
 
               <div className="verify">
                 <div className="verify__dot"/>
-                Halal status is estimated from place names. Always verify with the restaurant for certified halal.
+                “Halal” means verified on the JAKIM portal or tagged halal-only on OpenStreetMap.
+                “Muslim-friendly” is a guess from the name or cuisine. Always confirm with the restaurant.
               </div>
 
-              {/* Sort chips */}
               <div style={{display:'flex',gap:'6px',marginBottom:'12px',flexWrap:'wrap'}}>
-                {SORT_OPTS.map(function(o) {
-                  return (
-                    <button key={o.value} className={`chip${sortBy===o.value?' chip--on':''}`}
-                      style={{padding:'4px 11px',fontSize:'11.5px'}}
-                      onClick={() => setSortBy(o.value)}>
-                      {o.label}
-                    </button>
-                  );
-                })}
+                {SORT_OPTS.map(o => (
+                  <button key={o.value} className={`chip${sortBy === o.value ? ' chip--on' : ''}`}
+                    style={{padding:'4px 11px',fontSize:'11.5px'}} onClick={() => setSortBy(o.value)}>
+                    {o.label}
+                  </button>
+                ))}
               </div>
 
               {loading && (
-                <div className="spinner-wrap">
-                  <div className="spinner"/>
-                  <span>Searching all eateries near Merdeka 118…</span>
-                  {loadCount > 0 && (
-                    <span style={{fontFamily:'var(--font-mono)',fontSize:'12px',color:'var(--primary)'}}>
-                      {loadCount} places found so far
-                    </span>
-                  )}
+                <div className="spinner-wrap"><div className="spinner"/><span>Loading eateries near Merdeka 118…</span></div>
+              )}
+
+              {error && (
+                <div className="empty">
+                  <div className="empty__h">places.json not found</div>
+                  <div className="empty__p">Run <code>node scripts/build-places.mjs</code> and upload places.json. ({error})</div>
                 </div>
               )}
 
-              {!loading && displayPlaces.length === 0 && (
+              {data && displayPlaces.length === 0 && (
                 <div className="empty">
                   <div className="empty__h">No places found</div>
-                  <div className="empty__p">Try a different filter, halal setting, or increase the radius</div>
+                  <div className="empty__p">Try a different food type or halal setting, or widen the radius</div>
                 </div>
               )}
 
-              {displayPlaces.map(function(p) {
-                return (
-                  <PlaceCard
-                    key={p.place_id}
-                    place={p}
-                    selected={selected && selected.place_id === p.place_id}
-                    travel={travelMap[p.place_id] || null}
-                    travelMode={travelMode}
-                    onSelect={handleSelect}
-                  />
-                );
-              })}
+              {displayPlaces.map(p => (
+                <PlaceCard key={p.place_id} place={p} travelMode={travelMode}
+                  selected={selected && selected.place_id === p.place_id} onSelect={handleSelect}/>
+              ))}
 
-              {!loading && displayPlaces.length > 0 && (
+              {data && <MissingPlace/>}
+
+              {data && (
                 <div className="loading-more">
-                  {places.length} total places loaded · showing {displayPlaces.length}
+                  Showing {displayPlaces.length} of {places.length} places · data updated {window.fmtDate(data.generated_at)}<br/>
+                  Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* Map */}
         <div className="mapwrap">
           <div id="map" className="map"/>
           <div className="maplegend">
             <div className="maplegend__item"><div className="lg-dot lg-dot--cert"/>Halal</div>
             <div className="maplegend__item"><div className="lg-dot lg-dot--friendly"/>Friendly</div>
-            <div className="maplegend__item"><div className="lg-dot lg-dot--unsure"/>Non-Halal</div>
+            <div className="maplegend__item"><div className="lg-dot lg-dot--unsure"/>Unverified</div>
           </div>
         </div>
-
       </div>
+
+      {showAdd && <AddPlaceModal onClose={() => setShowAdd(false)}/>}
     </div>
   );
 }

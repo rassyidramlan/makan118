@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
 
 <style>
 :root{
@@ -26,7 +27,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size
 button{font-family:inherit;cursor:pointer;}
 
 /* ── topbar ── */
-.app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;}
 .topbar{display:flex;align-items:center;gap:20px;padding:13px 20px;
   background:var(--surface);border-bottom:1px solid var(--border);flex:none;}
 .brand{border:none;background:transparent;padding:0;text-align:left;cursor:pointer;}
@@ -37,7 +38,6 @@ button{font-family:inherit;cursor:pointer;}
 .loc{display:flex;align-items:center;gap:10px;padding-left:20px;border-left:1px solid var(--border);}
 .loc__dot{width:10px;height:10px;border-radius:50%;background:var(--primary);
   box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 18%,transparent);}
-.loc__label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;}
 .loc__name{font-size:13px;font-weight:700;}
 .topbar__spacer{flex:1;}
 .count-pill{font-family:var(--font-mono);font-size:11.5px;font-weight:500;
@@ -52,30 +52,23 @@ button{font-family:inherit;cursor:pointer;}
   padding:6px 13px;border-radius:100px;font-size:12.5px;font-weight:600;transition:.15s;white-space:nowrap;}
 .chip:hover{border-color:var(--primary);color:var(--primary-dk);}
 .chip--on{background:var(--primary);border-color:var(--primary);color:#fff;}
-
-/* cuisine dropdown (mobile) */
-.ctrl--cuisine{display:none;}
+.ctrl.ctrl--cuisine{display:none;}
 .cuisine-select{appearance:none;-webkit-appearance:none;width:100%;
   border:1px solid var(--border);border-radius:var(--r-sm);
   background:var(--surface) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236E7873' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;
-  color:var(--text);font-family:var(--font-ui);font-size:13.5px;font-weight:600;
+  color:var(--text);font-family:var(--font-ui);font-size:16px;font-weight:600;
   padding:9px 34px 9px 12px;cursor:pointer;}
 .cuisine-select:focus{outline:none;border-color:var(--primary);
   box-shadow:0 0 0 2px color-mix(in srgb,var(--primary) 20%,transparent);}
-
 .filters__meta{display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap;}
 .ctrl{display:flex;flex-direction:column;gap:5px;}
 .ctrl__label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;}
 .ctrl__label strong{color:var(--text);font-weight:700;}
-
-/* segmented control */
 .seg{display:inline-flex;background:color-mix(in srgb,var(--text) 5%,var(--surface));
-  border:1px solid var(--border);border-radius:100px;padding:3px;gap:2px;}
+  border:1px solid var(--border);border-radius:100px;padding:3px;gap:2px;flex-wrap:wrap;}
 .seg__btn{border:none;background:transparent;color:var(--muted);font-weight:600;
   padding:6px 13px;border-radius:100px;font-size:12px;transition:.15s;white-space:nowrap;}
 .seg__btn--on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.1);}
-
-/* radius slider */
 .ctrl--dist{min-width:180px;flex:1;max-width:280px;}
 .range{-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;
   background:var(--border);width:100%;margin-top:6px;}
@@ -94,7 +87,7 @@ button{font-family:inherit;cursor:pointer;}
 .stage{flex:1;min-height:0;display:grid;grid-template-columns:var(--panelw) 1fr;}
 .panel{background:var(--bg);overflow-y:auto;min-height:0;border-right:1px solid var(--border);}
 .mapwrap{position:relative;min-height:0;}
-.map{height:100%;width:100%;}
+.map{position:absolute;inset:0;}
 
 /* ── list ── */
 .list{padding:14px;}
@@ -114,24 +107,16 @@ button{font-family:inherit;cursor:pointer;}
   border-radius:var(--r);padding:11px;margin-bottom:10px;cursor:pointer;transition:.15s;}
 .card:hover{border-color:color-mix(in srgb,var(--primary) 45%,var(--border));box-shadow:var(--shadow);}
 .card--sel{border-color:var(--primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--primary) 22%,transparent);}
-.card__thumb{flex:none;width:88px;height:88px;border-radius:var(--r-sm);overflow:hidden;
-  position:relative;background:var(--ph-bg);}
-.card__thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.card__thumb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;}
-.card__closed{position:absolute;inset:0;background:rgba(28,36,32,.55);color:#fff;
-  display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;}
+.card__thumb{flex:none;width:64px;height:64px;border-radius:var(--r-sm);overflow:hidden;
+  position:relative;background:var(--ph-bg);display:flex;align-items:center;justify-content:center;font-size:28px;}
+.card__thumb--cert{background:color-mix(in srgb,var(--primary) 12%,var(--surface));}
+.card__thumb--friendly{background:color-mix(in srgb,var(--accent) 14%,var(--surface));}
 .card__body{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;}
-.card__topline{display:flex;align-items:flex-start;gap:8px;justify-content:space-between;}
 .card__name{font-size:14.5px;font-weight:700;margin:0;line-height:1.25;letter-spacing:-.01em;}
 .card__area{font-size:11px;color:var(--muted);}
-.rating{font-family:var(--font-mono);font-size:11.5px;font-weight:500;color:var(--text);
-  background:color-mix(in srgb,var(--accent) 16%,var(--surface));padding:2px 7px;border-radius:6px;flex:none;margin-top:1px;}
-.rating--lg{font-size:13.5px;padding:3px 9px;}
 .card__tags{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
 .cuisine-tag{font-size:11px;font-weight:600;color:var(--muted);background:color-mix(in srgb,var(--text) 5%,var(--surface));
   padding:2px 8px;border-radius:5px;white-space:nowrap;}
-.cost{font-family:var(--font-mono);font-size:12px;font-weight:700;letter-spacing:.5px;}
-.cost__on{color:var(--primary);} .cost__off{color:var(--border);}
 .card__foot{display:flex;align-items:center;gap:12px;margin-top:auto;padding-top:2px;}
 .meta{font-family:var(--font-mono);font-size:11px;color:var(--muted);display:inline-flex;gap:4px;align-items:center;}
 .meta__val{color:var(--text);font-weight:700;}
@@ -155,57 +140,97 @@ button{font-family:inherit;cursor:pointer;}
 .spinner{width:26px;height:26px;border:2.5px solid var(--border);
   border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-.loading-more{text-align:center;padding:14px;font-size:12px;color:var(--muted);font-family:var(--font-mono);}
+.loading-more{text-align:center;padding:14px;font-size:12px;color:var(--muted);font-family:var(--font-mono);line-height:1.7;}
+.loading-more a{color:var(--muted);}
 
 /* ── detail panel ── */
 .detail{background:var(--surface);min-height:100%;}
 .detail__head{display:flex;align-items:center;gap:10px;padding:12px 16px;position:sticky;top:0;
   background:rgba(255,255,255,.93);backdrop-filter:blur(6px);
   border-bottom:1px solid var(--border);z-index:5;}
-.detail__back{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);
+.detail__back{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);
   background:var(--surface);font-size:16px;color:var(--text);}
 .detail__back:hover{background:var(--bg);}
 .detail__crumb{font-size:12.5px;font-weight:600;color:var(--muted);}
 .detail__body{padding:16px 16px 28px;}
+.detail__hero{height:96px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:44px;background:var(--ph-bg);margin-bottom:14px;}
 .detail__name{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:0 0 3px;line-height:1.1;}
 .detail__area{font-size:12px;color:var(--muted);font-weight:600;}
 .detail__note{display:flex;align-items:flex-start;gap:8px;margin-top:11px;padding:8px 11px;
   background:color-mix(in srgb,var(--accent) 11%,var(--surface));border-radius:8px;
   font-size:12px;font-weight:600;color:color-mix(in srgb,var(--text) 75%,var(--accent));}
+.detail__note--ok{background:color-mix(in srgb,var(--primary) 10%,var(--surface));color:var(--primary-dk);}
 .detail__note-ic{flex:none;width:16px;height:16px;border-radius:50%;background:var(--accent);color:#fff;
   font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+.detail__note--ok .detail__note-ic{background:var(--primary);}
 .detail__tags{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;}
-.open-tag{font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;}
-.open-tag--on{color:var(--primary-dk);background:color-mix(in srgb,var(--primary) 12%,var(--surface));}
-.open-tag--off{color:#9A2C2C;background:color-mix(in srgb,#9A2C2C 10%,var(--surface));}
 .detail__section{margin-top:22px;}
 .detail__h{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;
   color:var(--muted);font-weight:700;margin:0 0 10px;}
 .travel-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:11px;}
-.travel-box{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:11px 12px;}
+.travel-box{display:block;background:var(--bg);border:1px solid var(--border);border-radius:9px;
+  padding:11px 12px;text-decoration:none;color:var(--text);transition:.15s;}
+a.travel-box:hover{border-color:var(--primary);}
 .travel-box__mode{font-size:10px;text-transform:uppercase;letter-spacing:.07em;
   color:var(--muted);font-weight:700;font-family:var(--font-mono);margin-bottom:5px;}
 .travel-box__time{font-size:19px;font-weight:800;line-height:1;}
+.travel-box__time--link{font-size:13px;color:var(--primary-dk);}
 .travel-box__dist{font-size:11px;color:var(--muted);margin-top:2px;}
-.btn{display:inline-flex;align-items:center;gap:7px;border:none;border-radius:9px;
+.btns{display:flex;gap:8px;flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid transparent;border-radius:9px;
   padding:11px 16px;font-weight:700;font-size:13.5px;text-decoration:none;transition:.15s;cursor:pointer;}
 .btn--primary{background:var(--primary);color:#fff;}
 .btn--primary:hover{background:var(--primary-dk);}
-.detail__row{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;color:var(--muted);margin-bottom:7px;}
+.btn--ghost{background:var(--surface);border-color:var(--border);color:var(--primary-dk);}
+.btn--ghost:hover{border-color:var(--primary);}
+.detail__row{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;color:var(--muted);margin-bottom:7px;overflow-wrap:anywhere;}
 .detail__row a{color:var(--primary-dk);text-decoration:none;}
 .detail__row a:hover{text-decoration:underline;}
-.hours-list{font-size:11.5px;line-height:1.9;color:var(--muted);}
-.hours-today{color:var(--primary-dk);font-weight:700;}
+.hours-raw{font-family:var(--font-mono);font-size:12px;line-height:1.8;color:var(--text);}
+.fineprint{font-size:11px;color:var(--muted);margin-top:6px;}
 
-/* map legend */
+/* missing a place */
+.missing{background:var(--surface);border:1px dashed color-mix(in srgb,var(--primary) 45%,var(--border));
+  border-radius:var(--r);padding:14px;margin:6px 0 4px;}
+.missing__h{font-weight:800;font-size:14.5px;margin-bottom:4px;}
+.missing__p{margin:0 0 10px;font-size:12.5px;line-height:1.5;color:var(--muted);}
+.missing__links{display:flex;gap:8px;flex-wrap:wrap;}
+.missing__links .btn{padding:9px 12px;font-size:12.5px;}
+.missing__tip{margin:10px 0 0;font-size:11.5px;line-height:1.5;color:var(--muted);}
+
+/* "+" add-a-place button and pop-up */
+.add-btn{flex:none;width:32px;height:32px;border-radius:50%;border:1px solid color-mix(in srgb,var(--primary) 35%,transparent);
+  background:var(--surface);color:var(--primary-dk);font-size:20px;font-weight:700;line-height:1;
+  display:flex;align-items:center;justify-content:center;padding:0 0 2px;transition:.15s;}
+.add-btn:hover,.add-btn:focus-visible{background:var(--primary);border-color:var(--primary);color:#fff;outline:none;}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(20,30,25,.45);
+  display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .15s ease;}
+.modal__box{position:relative;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;
+  background:var(--surface);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.25);}
+.modal__box .missing{border:none;margin:0;padding:20px 20px 18px;}
+.modal__box .missing__h{padding-right:44px;min-height:30px;}
+.modal__close{position:absolute;top:10px;right:10px;width:36px;height:36px;border-radius:8px;
+  border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:14px;}
+.modal__close:hover{color:var(--text);border-color:var(--text);}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@media(max-width:600px){
+  .modal{align-items:flex-end;padding:0;}
+  .modal__box{max-width:none;border-radius:16px 16px 0 0;animation:slideUp .2s ease;}
+  @keyframes slideUp{from{transform:translateY(40px)}to{transform:none}}
+}
+@media(prefers-reduced-motion:reduce){.modal,.modal__box{animation:none;}}
+
+/* map legend + popup */
 .maplegend{position:absolute;bottom:32px;left:12px;z-index:5;display:flex;gap:12px;
   background:rgba(255,255,255,.93);backdrop-filter:blur(6px);
   border:1px solid var(--border);border-radius:9px;padding:8px 12px;box-shadow:var(--shadow);}
 .maplegend__item{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--text);}
 .lg-dot{width:10px;height:10px;border-radius:50%;}
-.lg-dot--cert{background:#2E7D5B;}
-.lg-dot--friendly{background:#E0892F;}
-.lg-dot--unsure{background:#C0504D;}
+.lg-dot--cert{background:#2E7D5B;} .lg-dot--friendly{background:#E0892F;} .lg-dot--unsure{background:#C0504D;}
+.m118-pin{width:28px;height:28px;border-radius:50%;background:#1C2420;border:3px solid #fff;color:#fff;
+  font:700 9px var(--font-ui);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.35);}
+.maplibregl-popup-content{font-family:var(--font-ui);border-radius:9px;padding:8px 11px;}
 
 /* responsive */
 @media(max-width:900px){
@@ -215,71 +240,76 @@ button{font-family:inherit;cursor:pointer;}
   .loc{padding-left:12px;}
   .loc__name{font-size:12px;}
   .filters{padding:10px 14px 12px;}
-  .filters__row--chips{display:none;}        /* chips off on mobile */
-  .ctrl--cuisine{display:flex;width:100%;}   /* dropdown on instead */
+  .filters__row--chips{display:none;}
+  .ctrl.ctrl--cuisine{display:flex;width:100%;}
   .ctrl--dist{max-width:none;width:100%;}
   .vtabs{display:flex;}
   .stage{display:block;position:relative;}
   .panel,.mapwrap{position:absolute;inset:0;border:none;}
-  .app.view-list .mapwrap{display:none;}
+  .app.view-list .mapwrap{visibility:hidden;}
   .app.view-map .panel{display:none;}
 }
 @media(max-width:500px){
   .count-pill{display:none;}
-  .card__thumb{width:72px;height:72px;}
+  .loc{display:none;}
 }
 </style>
 </head>
 <body>
 <div id="root"></div>
 
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<!-- Libraries — versions pinned on purpose (an unpinned Babel broke v1) -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
 <script>
 window.CONFIG = {
-  GOOGLE_API_KEY: "REPLACE_WITH_YOUR_KEY",
-  // Menara Merdeka 118 — verified coordinates
-  MERDEKA118: { lat: 3.1419784034925144, lng: 101.70065939255888 },
-  // Street-level pedestrian entrance — used for walking distance calculations
-  // Ensures Google routes from the actual exit point, not inside the building
+  // Menara Merdeka 118 — verified pin
+  MERDEKA118:      { lat: 3.1419784034925144, lng: 101.70065939255888 },
+  // Street-level pedestrian entrance — distances and directions start here
   MERDEKA118_WALK: { lat: 3.1412, lng: 101.7004 },
-  DEFAULT_RADIUS: 1500
+  // Name Google Maps uses as the starting point for directions.
+  // (Coordinates get snapped to the nearest shop in 118 Mall, so a name is used.)
+  ORIGIN_NAME: 'Menara Merdeka 118, Kuala Lumpur',
+  DEFAULT_RADIUS: 1500,     // metres, initial slider value
+  WALK_CAP: 2000,           // walking mode never shows places further than this
+  // Free map tiles, no key. Backup: see README "If OpenFreeMap is down".
+  MAP_STYLE: 'https://tiles.openfreemap.org/styles/positron',
+  // Optional: link to a free Google Form where colleagues report halal status.
+  // Leave '' to hide the link.
+  REPORT_URL: ''
 };
 
+// Keywords are matched as whole words against name, address and OSM cuisine tags.
+// They can only make a place "Muslim-friendly" or "Unverified".
+// "Halal" (green) is reserved for places verified on the JAKIM portal
+// (overrides.json) or tagged diet:halal=only on OpenStreetMap.
 window.HALAL_KEYWORDS = {
-  cert: [
-    'halal','muslim','muslimah','nasi','roti canai','mamak','mee goreng',
-    'warung','kedai makan','sup kambing','nasi lemak','teh tarik','nasi kandar',
-    'nasi padang','nasi campur','rendang','murtabak','briyani','biryani',
-    'malay','melayu','muslim-owned','no pork','pork free','pork-free','nasi kerabu','fast food'
-  ],
   friendly: [
-    'chinese','western','japanese','korean','thai','indian','cafe','kopitiam',
-    'dim sum','seafood','fusion','italian','mexican','food court','medan selera'
+    'halal','muslim','muslimah','no pork','pork free','pork-free',
+    'nasi','nasi lemak','nasi kandar','nasi padang','nasi campur','nasi kerabu',
+    'roti canai','mamak','warung','kedai makan','sup kambing','teh tarik',
+    'rendang','murtabak','briyani','biryani','ayam penyet','mee rebus','soto',
+    'malay','melayu','arab','arabic','middle_eastern','turkish','lebanese',
+    'yemeni','pakistani','afghan','persian','kebab','shawarma'
   ],
   unlikely: [
-    'pork','babi','bacon','lard','ham','bbq pork','tonkotsu','char siu',
-    'roast pork','suckling pig','non halal','wine'
+    'pork','babi','bacon','lard','ham','char siu','siu yuk','roast pork',
+    'suckling pig','bak kut teh','tonkotsu','non halal','non-halal',
+    'wine','beer','pub','brewery','izakaya'
   ]
 };
 
 window.KL_MALLS = [
-  'merdeka 118','pavilion','suria klcc','klcc','mid valley','the gardens',
-  'nu sentral','lot 10','sungei wang','berjaya times square','imbi plaza',
-  'mytown','sunway velocity','avenue k','intermark','quill city','plaza low yat',
-  'fahrenheit','starhill','royal chulan','the weld','publika','pudu sentral','lalaport','118 mall'
-];
-
-// All place types to search — run multiple searches to get comprehensive results
-window.SEARCH_TYPES = [
-  'restaurant','cafe','bakery','meal_takeaway','meal_delivery',
-  'food','lounge','hotel','food court'
+  'merdeka 118','118 mall','pavilion','suria klcc','klcc','lot 10','sungei wang',
+  'berjaya times square','imbi plaza','fahrenheit','starhill','the weld',
+  'nu sentral','quill city','avenue k','intermark','plaza low yat','pudu sentral',
+  'lalaport','sunway velocity','mytown'
 ];
 </script>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=REPLACE_WITH_YOUR_KEY&libraries=places"></script>
 <script type="text/babel" src="components.jsx"></script>
 <script type="text/babel" src="app.jsx"></script>
 </body>

@@ -1,15 +1,41 @@
 // ── Utilities ──────────────────────────────────────────────────────────────
 
+// Whole-word keyword matcher, built once ("ham" must not match "Hamid")
+function buildMatcher(words) {
+  if (!words || !words.length) return function(){ return false; };
+  var esc = words.map(function(w){ return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+  var re = new RegExp('(^|[^a-z0-9])(' + esc.join('|') + ')(?=$|[^a-z0-9])', 'i');
+  return function(text){ return re.test(text); };
+}
+var isFriendlyText = buildMatcher(window.HALAL_KEYWORDS.friendly);
+var isUnlikelyText = buildMatcher(window.HALAL_KEYWORDS.unlikely);
+
+window.haystack = function(place) {
+  return ((place.name || '') + ' ' + (place.vicinity || '') + ' ' +
+          (Array.isArray(place.types) ? place.types.join(' ') : '')).toLowerCase();
+};
+
+// Halal status, most reliable source first.
+// Internal values stay 'cert' | 'friendly' | 'unsure' (same as v1).
 window.halalScore = function(place) {
-  const name     = (place.name     || '').toLowerCase();
-  const vicinity = (place.vicinity || '').toLowerCase();
-  const types    = Array.isArray(place.types) ? place.types.join(' ').toLowerCase() : '';
-  const hay      = name + ' ' + vicinity + ' ' + types;
-  const kw       = window.HALAL_KEYWORDS;
-  for (var i = 0; i < kw.unlikely.length;  i++) if (hay.indexOf(kw.unlikely[i])  > -1) return 'unsure';
-  for (var i = 0; i < kw.cert.length;      i++) if (hay.indexOf(kw.cert[i])      > -1) return 'cert';
-  for (var i = 0; i < kw.friendly.length;  i++) if (hay.indexOf(kw.friendly[i])  > -1) return 'friendly';
-  return 'cert';
+  if (place.verified && place.verified.halal) return place.verified.halal; // 1. you checked JAKIM
+  if (place.halal === 'only') return 'cert';                             // 2. OSM tag
+  if (place.halal === 'no')   return 'unsure';
+  var hay = window.haystack(place);
+  if (isUnlikelyText(hay))    return 'unsure';                           // 3. red-flag words
+  if (place.halal === 'yes')  return 'friendly';
+  if (isFriendlyText(hay))    return 'friendly';                         // 4. name / cuisine hints
+  return 'unsure';                                                       // 5. unknown
+};
+
+window.halalSource = function(place) {
+  if (place.verified && place.verified.halal) {
+    var when = place.verified.checked ? ' (checked ' + window.fmtDate(place.verified.checked) + ')' : '';
+    return 'Verified on the JAKIM Halal Malaysia portal' + when + '.';
+  }
+  if (place.halal === 'only') return 'Tagged “halal only” on OpenStreetMap. Not verified with JAKIM.';
+  if (place.halal === 'yes')  return 'Tagged “some halal options” on OpenStreetMap. Not verified with JAKIM.';
+  return null;
 };
 
 window.isMall = function(place) {
@@ -17,50 +43,81 @@ window.isMall = function(place) {
   return window.KL_MALLS.some(function(m){ return hay.indexOf(m) > -1; });
 };
 
-window.photoUrl = function(place, maxW) {
-  try {
-    return (place.photos && place.photos.length > 0)
-      ? place.photos[0].getUrl({ maxWidth: maxW || 200 }) : null;
-  } catch(e) { return null; }
-};
-
 window.typeEmoji = function(types) {
   if (!Array.isArray(types)) return '🍽️';
-  if (types.indexOf('cafe') > -1)           return '☕';
-  if (types.indexOf('bakery') > -1)         return '🥐';
-  if (types.indexOf('bar') > -1)            return '🍸';
-  if (types.indexOf('meal_takeaway') > -1)  return '📦';
+  var t = types.join(' ');
+  if (/\b(coffee_shop|coffee)\b/.test(t) || types[0] === 'cafe') return '☕';
+  if (types[0] === 'bakery' || types[0] === 'pastry') return '🥐';
+  if (/\b(burger)\b/.test(t)) return '🍔';
+  if (/\b(pizza)\b/.test(t)) return '🍕';
+  if (/\b(chicken)\b/.test(t)) return '🍗';
+  if (/\b(noodle|ramen)\b/.test(t)) return '🍜';
+  if (/\b(sushi|japanese)\b/.test(t)) return '🍱';
+  if (/\b(indian)\b/.test(t)) return '🫓';
+  if (types[0] === 'fast_food') return '🥡';
+  if (types[0] === 'food_court') return '🏪';
   return '🍽️';
 };
 
+var TYPE_LABEL = {
+  restaurant:'Restaurant', cafe:'Café', fast_food:'Fast food',
+  food_court:'Food court', bakery:'Bakery', pastry:'Pastry'
+};
 window.cuisineLabel = function(types) {
-  if (!Array.isArray(types)) return null;
-  var map = {
-    cafe:'Café', bakery:'Bakery', bar:'Bar',
-    meal_takeaway:'Takeaway', meal_delivery:'Delivery',
-    fast_food:'Fast Food', restaurant:'Restaurant',
-    food:'Food Court', night_club:'Club'
-  };
-  for (var i = 0; i < types.length; i++) if (map[types[i]]) return map[types[i]];
-  return null;
+  if (!Array.isArray(types) || !types.length) return null;
+  var kind = TYPE_LABEL[types[0]] || null;
+  var c = types[1] ? types[1].replace(/_/g, ' ') : null;
+  if (c) c = c.charAt(0).toUpperCase() + c.slice(1);
+  return c ? (kind ? c + ' · ' + kind : c) : kind;
 };
 
-window.fmtDur = function(secs) {
-  if (!secs) return '—';
-  var m = Math.round(secs / 60);
-  return m < 60 ? m + ' min' : Math.floor(m/60) + 'h ' + (m%60) + 'm';
-};
+// Walking estimate: straight line × 1.3 detour factor at 80 m per minute
+window.walkMetres = function(place) { return Math.round((place._crow || 0) * 1.3); };
+window.walkMins   = function(place) { return Math.max(1, Math.round(window.walkMetres(place) / 80)); };
 
+window.fmtMins = function(m) { return m < 60 ? m + ' min' : Math.floor(m/60) + 'h ' + (m%60) + 'm'; };
 window.fmtDist = function(m) {
-  if (!m) return '';
+  if (m == null) return '';
   return m < 1000 ? m + ' m' : (m/1000).toFixed(1) + ' km';
 };
+window.fmtDate = function(iso) {
+  try { return new Date(iso).toLocaleDateString('en-MY', { day:'numeric', month:'short', year:'numeric' }); }
+  catch (e) { return iso; }
+};
 
-window.costDots = function(level) {
-  if (!level) return null;
-  return [1,2,3,4].map(function(i){
-    return React.createElement('span',{key:i,className:i<=level?'cost__on':'cost__off'},'RM');
-  });
+// ── Free links (no API key needed) ─────────────────────────────────────────
+
+// Text Google Maps can resolve to the right restaurant: name + street + city.
+// Coordinates alone get snapped to whatever business is nearest the point.
+window.placeQuery = function(place) {
+  var q = place.name;
+  var v = place.vicinity || '';
+  if (v) q += ', ' + v;
+  if (!/kuala lumpur/i.test(v)) q += ', Kuala Lumpur';
+  return q;
+};
+window.dirUrl = function(place, mode) {
+  return 'https://www.google.com/maps/dir/?api=1' +
+    '&origin=' + encodeURIComponent(window.CONFIG.ORIGIN_NAME) +
+    '&destination=' + encodeURIComponent(window.placeQuery(place)) +
+    '&travelmode=' + (mode || 'walking');
+};
+window.googleSearchUrl = function(place) {
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(window.placeQuery(place));
+};
+window.osmUrl = function(place) {
+  return /^(node|way)\//.test(place.place_id)
+    ? 'https://www.openstreetmap.org/' + place.place_id : null;
+};
+window.mapillaryUrl = function(place) {
+  return place.mly ? 'https://www.mapillary.com/app/?pKey=' + encodeURIComponent(place.mly) : null;
+};
+window.safeUrl = function(u) {
+  if (!u) return null;
+  u = String(u).trim();
+  if (/^[a-z][a-z0-9+.-]*:/i.test(u) && !/^https?:\/\//i.test(u)) return null; // other schemes
+  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  return /^https?:\/\/[^\s"'<>]+$/i.test(u) ? u : null;
 };
 
 // ── HalalBadge ─────────────────────────────────────────────────────────────
@@ -68,9 +125,9 @@ window.costDots = function(level) {
 const HalalBadge = ({ score }) => {
   const cfg = {
     cert:     { cls:'halal--cert',     label:'Halal' },
-    friendly: { cls:'halal--friendly', label:'Muslim Friendly' },
-    unsure:   { cls:'halal--unsure',   label:'Non-Halal' },
-  }[score] || { cls:'halal--cert', label:'Halal' };
+    friendly: { cls:'halal--friendly', label:'Muslim-friendly' },
+    unsure:   { cls:'halal--unsure',   label:'Unverified' },
+  }[score] || { cls:'halal--unsure', label:'Unverified' };
   return (
     <span className={`halal ${cfg.cls}`}>
       <span className="halal__dot"/>
@@ -81,60 +138,38 @@ const HalalBadge = ({ score }) => {
 
 // ── PlaceCard ──────────────────────────────────────────────────────────────
 
-const PlaceCard = ({ place, selected, travel, travelMode, onSelect }) => {
-  if (!place || !place.place_id) return null;
+const PlaceCard = ({ place, selected, travelMode, onSelect }) => {
   const score  = window.halalScore(place);
-  const photo  = window.photoUrl(place, 192);
-  const emoji  = window.typeEmoji(place.types);
   const ctag   = window.cuisineLabel(place.types);
   const inMall = window.isMall(place);
-  const isOpen = place.opening_hours ? place.opening_hours.open_now : undefined;
-
-  // Show travel time for the selected mode
-  const travelData = travel && travel[travelMode];
-  const dur  = travelData && travelData.duration  ? travelData.duration.value  : null;
-  const dist = travelData && travelData.distance  ? travelData.distance.value  : null;
-
-  const modeIcon = { walk:'🚶', transit:'🚇', drive:'🚗' }[travelMode] || '🚗';
+  const area   = (place.vicinity || '').split(',').slice(0, 2).join(',');
 
   return (
-    <div className={`card${selected?' card--sel':''}`} onClick={() => onSelect(place)}>
-      <div className="card__thumb">
-        {photo
-          ? <img src={photo} alt={place.name} loading="lazy"/>
-          : <div className="card__thumb-ph">{emoji}</div>
-        }
-        {isOpen === false && <div className="card__closed">Closed</div>}
-      </div>
+    <div className={`card${selected ? ' card--sel' : ''}`} onClick={() => onSelect(place)}>
+      <div className={`card__thumb card__thumb--${score}`}>{window.typeEmoji(place.types)}</div>
       <div className="card__body">
-        <div className="card__topline">
-          <div style={{minWidth:0}}>
-            <h3 className="card__name">{place.name}</h3>
-            {place.vicinity && (
-              <div className="card__area">{place.vicinity.split(',').slice(0,2).join(',')}</div>
-            )}
-          </div>
-          {place.rating && <span className="rating">⭐ {place.rating}</span>}
+        <div style={{minWidth:0}}>
+          <h3 className="card__name">{place.name}</h3>
+          {area && <div className="card__area">{area}</div>}
         </div>
         <div className="card__tags">
           <HalalBadge score={score}/>
           {ctag && <span className="cuisine-tag">{ctag}</span>}
           {inMall && <span className="cuisine-tag">🏬 Mall</span>}
-          {place.price_level ? <span className="cost">{window.costDots(place.price_level)}</span> : null}
         </div>
         <div className="card__foot">
-          {dur ? (
+          {travelMode === 'walk' ? (
             <span className="meta">
-              {modeIcon} <span className="meta__val">{window.fmtDur(dur)}</span>
-              {dist ? <span style={{color:'var(--border)'}}> · {window.fmtDist(dist)}</span> : null}
+              🚶 <span className="meta__val">~{window.fmtMins(window.walkMins(place))}</span>
+              <span> · {window.fmtDist(window.walkMetres(place))}</span>
             </span>
-          ) : (place._crow != null ? (
+          ) : (
             <span className="meta">
               📍 <span className="meta__val">{window.fmtDist(place._crow)}</span>
-              <span style={{color:'var(--muted)'}}> away</span>
+              <span> straight line</span>
             </span>
-          ) : null)}
-          <button className="card__dir" onClick={e=>{e.stopPropagation();onSelect(place);}}>
+          )}
+          <button className="card__dir" onClick={e => { e.stopPropagation(); onSelect(place); }}>
             Details →
           </button>
         </div>
@@ -145,128 +180,127 @@ const PlaceCard = ({ place, selected, travel, travelMode, onSelect }) => {
 
 // ── DetailPanel ────────────────────────────────────────────────────────────
 
-const DetailPanel = ({ place, details, travel, onClose }) => {
+const DetailPanel = ({ place, onClose }) => {
   if (!place) return null;
-  const score = window.halalScore(place);
-  const photos = [];
-  try {
-    var src = (details && details.photos) ? details.photos : (place.photos || []);
-    src.slice(0,6).forEach(function(p){ try{ photos.push(p.getUrl({maxWidth:400})); }catch(e){} });
-  } catch(e){}
-
-  const todayIdx = new Date().getDay();
-  const hours    = (details && details.opening_hours && details.opening_hours.weekday_text) || [];
-  const isOpen   = details
-    ? (details.opening_hours ? details.opening_hours.open_now : undefined)
-    : (place.opening_hours  ? place.opening_hours.open_now   : undefined);
-
-  const lat     = place.geometry && place.geometry.location ? place.geometry.location.lat() : 0;
-  const lng     = place.geometry && place.geometry.location ? place.geometry.location.lng() : 0;
-  const mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination='+lat+','+lng+'&destination_place_id='+place.place_id;
+  const score   = window.halalScore(place);
+  const source  = window.halalSource(place);
+  const website = window.safeUrl(place.website);
+  const osm     = window.osmUrl(place);
+  const mly     = window.mapillaryUrl(place);
+  const report  = window.CONFIG.REPORT_URL;
+  const ctag    = window.cuisineLabel(place.types);
 
   return (
     <div className="detail">
       <div className="detail__head">
-        <button className="detail__back" onClick={onClose}>←</button>
+        <button className="detail__back" onClick={onClose} aria-label="Back to list">←</button>
         <span className="detail__crumb">Restaurant detail</span>
       </div>
       <div className="detail__body">
-        {photos.length > 0 && (
-          <div style={{display:'flex',gap:'8px',overflowX:'auto',marginBottom:'14px',scrollbarWidth:'none'}}>
-            {photos.map((url,i) => (
-              <img key={i} src={url} alt="" style={{height:'130px',borderRadius:'9px',objectFit:'cover',flexShrink:0}}/>
-            ))}
-          </div>
-        )}
+        <div className={`detail__hero card__thumb--${score}`}>{window.typeEmoji(place.types)}</div>
 
         <h2 className="detail__name">{place.name}</h2>
         {place.vicinity && <div className="detail__area">{place.vicinity}</div>}
 
         <div className="detail__tags">
           <HalalBadge score={score}/>
-          {isOpen !== undefined && (
-            <span className={`open-tag ${isOpen?'open-tag--on':'open-tag--off'}`}>
-              {isOpen ? '● Open now' : '● Closed'}
-            </span>
-          )}
-          {details && details.price_level
-            ? <span className="cost">{window.costDots(details.price_level)}</span> : null}
-          {place.rating && (
-            <span className="rating rating--lg">⭐ {place.rating} ({place.user_ratings_total||0})</span>
-          )}
+          {ctag && <span className="cuisine-tag">{ctag}</span>}
+          {window.isMall(place) && <span className="cuisine-tag">🏬 Mall</span>}
         </div>
 
+        {score === 'cert' && source && (
+          <div className="detail__note detail__note--ok">
+            <div className="detail__note-ic">✓</div>{source}
+          </div>
+        )}
         {score !== 'cert' && (
           <div className="detail__note">
             <div className="detail__note-ic">!</div>
             {score === 'friendly'
-              ? 'Appears Muslim-friendly but may not be certified halal. Verify with the restaurant.'
-              : 'Halal status unverified. Please confirm directly with the restaurant before ordering.'}
+              ? (source || 'Looks Muslim-friendly from its name or cuisine.') + ' Please confirm with the restaurant.'
+              : 'Halal status unknown. Please confirm directly with the restaurant before ordering.'}
           </div>
         )}
 
-        {travel && (
-          <div className="detail__section">
-            <div className="detail__h">Travel from Merdeka 118</div>
-            <div className="travel-grid">
-              {['walk','transit','drive'].map(mode => {
-                const d = travel[mode];
-                if (!d) return null;
-                const icons = {walk:'🚶',transit:'🚇',drive:'🚗'};
-                const labels = {walk:'Walk',transit:'Transit',drive:'Drive'};
-                return (
-                  <div className="travel-box" key={mode}>
-                    <div className="travel-box__mode">{icons[mode]} {labels[mode]}</div>
-                    <div className="travel-box__time">{window.fmtDur(d.duration&&d.duration.value)}</div>
-                    <div className="travel-box__dist">{window.fmtDist(d.distance&&d.distance.value)}</div>
-                  </div>
-                );
-              })}
-            </div>
-            <a className="btn btn--primary" href={mapsUrl} target="_blank" rel="noopener">
-              Open in Google Maps ↗
+        <div className="detail__section">
+          <div className="detail__h">Getting there from Merdeka 118</div>
+          <div className="travel-grid">
+            <a className="travel-box" href={window.dirUrl(place, 'walking')} target="_blank" rel="noopener">
+              <div className="travel-box__mode">🚶 Walk</div>
+              <div className="travel-box__time">~{window.fmtMins(window.walkMins(place))}</div>
+              <div className="travel-box__dist">≈ {window.fmtDist(window.walkMetres(place))}</div>
+            </a>
+            <a className="travel-box" href={window.dirUrl(place, 'transit')} target="_blank" rel="noopener">
+              <div className="travel-box__mode">🚇 Transit</div>
+              <div className="travel-box__time travel-box__time--link">Route ↗</div>
+              <div className="travel-box__dist">in Google Maps</div>
+            </a>
+            <a className="travel-box" href={window.dirUrl(place, 'driving')} target="_blank" rel="noopener">
+              <div className="travel-box__mode">🚗 Drive</div>
+              <div className="travel-box__time travel-box__time--link">Route ↗</div>
+              <div className="travel-box__dist">in Google Maps</div>
             </a>
           </div>
-        )}
+          <div className="fineprint">Walking time is an estimate from straight-line distance. Tap a box for the real route.</div>
+        </div>
 
-        {details && (details.formatted_phone_number || details.website) && (
+        <div className="detail__section">
+          <div className="detail__h">See it before you go</div>
+          <div className="btns">
+            <a className="btn btn--primary" href={window.googleSearchUrl(place)} target="_blank" rel="noopener">
+              Photos &amp; reviews ↗
+            </a>
+            {mly && (
+              <a className="btn btn--ghost" href={mly} target="_blank" rel="noopener">Street view ↗</a>
+            )}
+          </div>
+        </div>
+
+        {(place.phone || website) && (
           <div className="detail__section">
             <div className="detail__h">Contact</div>
-            {details.formatted_phone_number && (
+            {place.phone && (
               <div className="detail__row">
                 <span>📞</span>
-                <a href={'tel:'+details.formatted_phone_number}>{details.formatted_phone_number}</a>
+                <a href={'tel:' + place.phone.replace(/[^\d+]/g, '')}>{place.phone}</a>
               </div>
             )}
-            {details.website && (
+            {website && (
               <div className="detail__row">
                 <span>🌐</span>
-                <a href={details.website} target="_blank" rel="noopener">
-                  {details.website.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,45)}
+                <a href={website} target="_blank" rel="noopener">
+                  {website.replace(/^https?:\/\//, '').replace(/\/$/, '').slice(0, 45)}
                 </a>
               </div>
             )}
           </div>
         )}
 
-        {hours.length > 0 && (
+        {place.hours && (
           <div className="detail__section">
-            <div className="detail__h">Opening Hours</div>
-            <div className="hours-list">
-              {hours.map((line,i) => (
-                <div key={i} className={i===((todayIdx+6)%7)?'hours-today':''}>{line}</div>
-              ))}
-            </div>
+            <div className="detail__h">Opening hours</div>
+            <div className="hours-raw">{place.hours.split(';').map((s, i) => <div key={i}>{s.trim()}</div>)}</div>
+            <div className="fineprint">From OpenStreetMap. Mo = Monday, PH = public holidays.</div>
           </div>
         )}
 
+        {(report || osm) && (
         <div className="detail__section">
-          <div className="detail__h">Address</div>
-          <div className="detail__row">
-            <span>📍</span>
-            <span>{(details&&details.formatted_address)||place.vicinity||'—'}</span>
-          </div>
+          <div className="detail__h">Help keep this right</div>
+          {report && (
+            <div className="detail__row">
+              <span>📝</span>
+              <a href={report} target="_blank" rel="noopener">Report halal status or a closure</a>
+            </div>
+          )}
+          {osm && (
+            <div className="detail__row">
+              <span>🗺</span>
+              <a href={osm} target="_blank" rel="noopener">View or fix this place on OpenStreetMap</a>
+            </div>
+          )}
         </div>
+        )}
       </div>
     </div>
   );
