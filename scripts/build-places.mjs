@@ -9,12 +9,17 @@
 //   node scripts/build-places.mjs              → writes places.json
 //   node scripts/build-places.mjs --checklist  → also writes jakim-checklist.csv
 //
+// JAKIM results: fill in the jakim_result and checked_date columns of
+// jakim-checklist.csv in Excel, save it (keep CSV format), and run this script.
+// Your results are copied into overrides.json automatically, and the filled
+// checklist is renamed to jakim-checklist-imported-<date>.csv.
+//
 // Optional Mapillary street-view links (free token, never published):
 //   MAPILLARY_TOKEN=MLY|xxxx node scripts/build-places.mjs
 //   (Windows PowerShell:  $env:MAPILLARY_TOKEN="MLY|xxxx"; node scripts/build-places.mjs)
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs';
 
 // Menara Merdeka 118 — verified pin (search centre)
 const CENTER = { lat: 3.1419784034925144, lng: 101.70065939255888 };
@@ -25,7 +30,6 @@ const CHECKLIST_RADIUS = 1500; // metres — places worth checking on the JAKIM 
 
 const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
-  'https://overpass.private.coffee/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
 ];
 
@@ -102,6 +106,95 @@ function normalise(e) {
 }
 
 // ── main ─────────────────────────────────────────────────────────────────────
+
+// ── Import JAKIM results typed into jakim-checklist.csv (Excel) ─────────────
+// Runs first, so your results are saved even if Overpass is down.
+
+function parseCsv(text) {
+  text = text.replace(/^﻿/, '');                       // Excel's BOM
+  const firstLine = text.split(/\r?\n/, 1)[0];
+  const sep = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+      else if (ch === '"') q = false;
+      else cell += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === sep) { row.push(cell); cell = ''; }
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell); rows.push(row); row = []; cell = '';
+    } else cell += ch;
+  }
+  if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim() !== ''));
+}
+
+function normResult(v) {
+  v = (v || '').trim().toLowerCase();
+  if (!v) return null;
+  if (/^(cert|certified|halal|yes|y|listed|jakim)/.test(v)) return 'cert';
+  if (/^(friendly|muslim)/.test(v)) return 'friendly';
+  if (/^(unsure|no|n|not|none|unverified|tidak)/.test(v)) return 'unsure';
+  return undefined;                                          // unrecognised
+}
+
+function normDate(v) {
+  v = (v || '').trim();
+  const today = new Date().toISOString().slice(0, 10);
+  if (!v) return today;
+  let m;
+  if ((m = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  if ((m = v.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/))) {   // Malaysian Excel: 27/11/2026
+    const y = m[3].length === 2 ? '20' + m[3] : m[3];
+    return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  }
+  if (/^\d{5}$/.test(v)) {                                   // Excel date serial number
+    return new Date(Date.UTC(1899, 11, 30) + (+v) * 86400000).toISOString().slice(0, 10);
+  }
+  const d = new Date(v);
+  return isNaN(d) ? today : d.toISOString().slice(0, 10);
+}
+
+if (existsSync('jakim-checklist.csv')) {
+  const rows = parseCsv(readFileSync('jakim-checklist.csv', 'utf8'));
+  const head = (rows[0] || []).map(h => h.trim().toLowerCase());
+  const col = name => head.findIndex(h => h.startsWith(name));
+  const iId = col('place_id'), iName = col('name'), iRes = col('jakim_result'), iDate = col('checked_date');
+  if (iId < 0 || iRes < 0) {
+    console.warn('jakim-checklist.csv: could not find the place_id / jakim_result columns — skipped');
+  } else {
+    const ov = existsSync('overrides.json') ? JSON.parse(readFileSync('overrides.json', 'utf8')) : {};
+    let n = 0; const bad = [];
+    for (const r of rows.slice(1)) {
+      const id = (r[iId] || '').trim();
+      const res = normResult(r[iRes]);
+      if (!id || res === null) continue;                     // not checked yet
+      if (res === undefined) { bad.push(`${r[iName] || id}: "${r[iRes]}"`); continue; }
+      ov[id] = Object.assign({}, ov[id], {
+        halal: res,
+        checked: normDate(iDate >= 0 ? r[iDate] : ''),
+        note: res === 'cert' ? 'JAKIM portal' : 'Not listed on JAKIM portal',
+      });
+      n++;
+    }
+    if (bad.length) {
+      console.warn(`jakim-checklist.csv: ${bad.length} result(s) not understood (use cert or unsure):`);
+      bad.forEach(b => console.warn('  ' + b));
+    }
+    if (n > 0) {
+      writeFileSync('overrides.json', JSON.stringify(ov, null, 2) + '\n');
+      const stamp = new Date().toISOString().slice(0, 10);
+      let dest = `jakim-checklist-imported-${stamp}.csv`, k = 2;
+      while (existsSync(dest)) dest = `jakim-checklist-imported-${stamp}-${k++}.csv`;
+      renameSync('jakim-checklist.csv', dest);
+      console.log(`✔ Imported ${n} JAKIM result(s) from jakim-checklist.csv into overrides.json`);
+      console.log(`  (the filled checklist was renamed to ${dest})`);
+    }
+  }
+}
 
 const elements = await fetchOverpass();
 console.log(`Overpass returned ${elements.length} elements`);

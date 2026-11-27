@@ -1,5 +1,1341 @@
 {
   "_how_to_use": "Key = place_id from places.json or jakim-checklist.csv. halal: 'cert' (found on JAKIM portal), 'friendly' or 'unsure' (not listed). Delete the _example entries when you add real ones. Keys starting with _ are ignored.",
-  "_example_verified": { "halal": "cert", "checked": "2026-11-26", "note": "JAKIM portal" },
-  "_example_added_by_hand": { "name": "Example Warung", "lat": 3.1405, "lng": 101.6998, "vicinity": "Jalan Hang Jebat", "types": ["restaurant", "malaysian"], "halal": "cert", "checked": "2026-11-26", "note": "JAKIM portal" }
+  "_example_verified": {
+    "halal": "cert",
+    "checked": "2026-11-26",
+    "note": "JAKIM portal"
+  },
+  "_example_added_by_hand": {
+    "name": "Example Warung",
+    "lat": 3.1405,
+    "lng": 101.6998,
+    "vicinity": "Jalan Hang Jebat",
+    "types": [
+      "restaurant",
+      "malaysian"
+    ],
+    "halal": "cert",
+    "checked": "2026-11-26",
+    "note": "JAKIM portal"
+  },
+  "node/13006953625": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13006953623": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13375186325": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/7234384853": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5676170722": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13375140051": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13288799443": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4437315492": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4882951123": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/6019875647": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4359530789": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12139782383": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13339642283": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12139782379": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11359425782": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5508071421": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5510767423": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/6547114885": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5787606254": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10794657775": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/6148554785": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11821291879": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10967203405": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10563703509": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12586947229": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/7489637591": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/7490098549": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11104505192": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11359425780": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12597629702": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/7503236188": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12676849689": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13127855579": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/7503236187": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5507346721": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13146213696": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12676849688": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4200450589": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12676849690": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10775886724": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10908633639": {
+    "halal": "cert",
+    "checked": "2026-11-27",
+    "note": "JAKIM portal"
+  },
+  "node/6160225785": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4360836990": {
+    "halal": "cert",
+    "checked": "2026-11-27",
+    "note": "JAKIM portal"
+  },
+  "node/12163156298": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13012957190": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11681502730": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4280013142": {
+    "halal": "cert",
+    "checked": "2026-11-27",
+    "note": "JAKIM portal"
+  },
+  "node/11047790755": {
+    "halal": "cert",
+    "checked": "2026-11-27",
+    "note": "JAKIM portal"
+  },
+  "node/4219338391": {
+    "halal": "cert",
+    "checked": "2026-11-27",
+    "note": "JAKIM portal"
+  },
+  "node/4116690790": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4279651590": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4412975093": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5601784821": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13527810217": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4280013150": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12261056701": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12875151013": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10252352909": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12543307988": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12543307986": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/6183756885": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13008128835": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10801231763": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11626533051": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4496933291": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4741390123": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4277481413": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "way/1247407376": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10836454477": {
+    "halal": "cert",
+    "checked": "2026-11-27",
+    "note": "JAKIM portal"
+  },
+  "node/12550862015": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/2980371654": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "way/1448252921": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12520691093": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10701095795": {
+    "halal": "cert",
+    "checked": "2026-11-27",
+    "note": "JAKIM portal"
+  },
+  "node/12550835409": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12550799966": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12432132491": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11583800569": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13362890612": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4799645456": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13385649924": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/7596627740": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12550835412": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "way/1246914052": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12468450824": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12606472719": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/1624820901": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12434912665": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/2455239666": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4133879829": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12399016022": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12434912666": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5392815243": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12000071280": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12606472718": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12606472717": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12606472716": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13394144863": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13321625550": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12249381575": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11681502739": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13394144866": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11598068305": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/9906855620": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12606472721": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13330035428": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5323174521": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4548766319": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13321625549": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/7255184991": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12606472720": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10867067104": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13207979035": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12237564890": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13207989976": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/6300627285": {
+    "halal": "cert",
+    "checked": "2026-11-27",
+    "note": "JAKIM portal"
+  },
+  "node/13389897580": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13109505598": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12175057543": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11007001205": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/6301795230": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13810145245": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4873887058": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13788679773": {
+    "halal": "cert",
+    "checked": "2026-11-27",
+    "note": "JAKIM portal"
+  },
+  "node/13159751059": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/6132382586": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4735684624": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/9580825207": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13810145253": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13527855008": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12625868493": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13810145257": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13879118472": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4787665922": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11332998050": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12287397701": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12330676788": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4361365090": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10248183649": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12876462505": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13345001554": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4663419870": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/6279954385": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13704753604": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13329428517": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4663419856": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11244945892": {
+    "halal": "cert",
+    "checked": "2026-11-27",
+    "note": "JAKIM portal"
+  },
+  "node/10806735121": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/2294792462": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12186135930": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5107821623": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12625942529": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4663419850": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5473863806": {
+    "halal": "cert",
+    "checked": "2026-11-27",
+    "note": "JAKIM portal"
+  },
+  "node/11578252700": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4984470424": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12303516651": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12385814090": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/3505993393": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4313242989": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5107794522": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11582271841": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13527855004": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/3092075894": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/7309005005": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12386126693": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4476551094": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13706992294": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5077956851": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12625942531": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5107792723": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/2881830827": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4663419857": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13481071291": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4482281415": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4616047293": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12264992193": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11582271843": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5603129147": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13481077013": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/2941526586": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11450738669": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "way/886438947": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4663336691": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4749632572": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4434688347": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13704753642": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12071410369": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/2917317314": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13043098242": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13617332889": {
+    "halal": "cert",
+    "checked": "2026-11-27",
+    "note": "JAKIM portal"
+  },
+  "node/5069175421": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13869887570": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10806844415": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4600234390": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13900641401": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/7695193885": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5907955885": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10781569180": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12852877781": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12102046311": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13786120319": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11587383845": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "way/1161994132": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/6527644285": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4688278845": {
+    "halal": "cert",
+    "checked": "2026-11-27",
+    "note": "JAKIM portal"
+  },
+  "node/11413754070": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/7522884018": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/6344403385": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/8956165318": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12736533438": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10972316201": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10972402507": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12287397702": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/3092072671": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10683313894": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12816733139": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5467261621": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/2917406000": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10882709705": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11586862776": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10833459783": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4920235621": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4182641937": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12538578404": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5453721021": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10972402508": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/6484069485": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11745553851": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12401371720": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5506162025": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/2917405999": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4400794158": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11586862780": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/7603028953": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12401371734": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10972402512": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11606542968": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/7434567194": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/11145780514": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10187536848": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4400794168": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/7434567189": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10187536846": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/12649851601": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13685766080": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4400796064": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10187536847": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5581685458": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10972402514": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10972402520": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5426363921": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5417597021": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/5105477226": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4400794159": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/6612170773": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/13505887969": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4211695590": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/10972402516": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/3446367033": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4400794162": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/1543875942": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4316891691": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  },
+  "node/4400794171": {
+    "halal": "unsure",
+    "checked": "2026-11-27",
+    "note": "Not listed on JAKIM portal"
+  }
 }
